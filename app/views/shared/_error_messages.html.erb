@@ -1,0 +1,10 @@
+<% if object.errors.any? %>
+  <section class="error-panel">
+    <p>入力内容を確認してください。</p>
+    <ul>
+      <% object.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

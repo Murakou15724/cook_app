@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>CookApp</title>
+    <title>料理アプリ</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -11,6 +11,37 @@
   </head>
 
   <body>
-    <%= yield %>
+    <div class="app-shell">
+      <header class="app-header">
+        <%= link_to "料理アプリ", logged_in? ? root_path : login_path, class: "brand" %>
+
+        <% if logged_in? %>
+          <%= button_to "ログアウト", logout_path, method: :delete, class: "link-button" %>
+        <% end %>
+      </header>
+
+      <% if notice.present? %>
+        <p class="flash flash-notice"><%= notice %></p>
+      <% end %>
+
+      <% if alert.present? %>
+        <p class="flash flash-alert"><%= alert %></p>
+      <% end %>
+
+      <main class="app-main">
+        <%= yield %>
+      </main>
+
+      <% if logged_in? %>
+        <nav class="bottom-nav" aria-label="主要ナビゲーション">
+          <%= link_to "ホーム", root_path, class: current_page?(root_path) ? "active" : nil %>
+          <%= link_to "献立一覧", "#", class: "disabled", aria: { disabled: true } %>
+          <%= link_to "献立作成", "#", class: "disabled", aria: { disabled: true } %>
+          <%= link_to "買い物", "#", class: "disabled", aria: { disabled: true } %>
+          <%= link_to "過去料理", "#", class: "disabled", aria: { disabled: true } %>
+          <%= link_to "人物タグ", "#", class: "disabled", aria: { disabled: true } %>
+        </nav>
+      <% end %>
+    </div>
   </body>
 </html>
