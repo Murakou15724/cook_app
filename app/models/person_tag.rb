@@ -7,7 +7,7 @@ class PersonTag < ApplicationRecord
 
   before_validation :normalize_name
 
-  validates :name, presence: true, uniqueness: { scope: :user_id }
+  validates :name, presence: true, uniqueness: { scope: :user_id, case_sensitive: false }
 
   private
 

@@ -6,11 +6,8 @@
 
 <section class="card">
   <div class="section-title"><h2>新規作成</h2></div>
-  <%= form_with url: person_tags_path, class: "form-card" do |form| %>
-    <div class="form-group"><%= form.label :name, "人物名" %><%= form.text_field :name, placeholder: "例: 家族" %></div>
-    <label class="check-row"><%= check_box_tag :default_selected %> 新規献立で初期選択</label>
-    <%= form.submit "作成する", class: "primary-button" %>
-  <% end %>
+  <%= render "shared/error_messages", object: @person_tag %>
+  <%= render "person_tags/form", person_tag: @person_tag %>
 </section>
 
 <section class="card">
@@ -19,7 +16,10 @@
     <% @person_tags.each do |tag| %>
       <div class="dev-link-row">
         <span><%= tag.name %><%= " / 初期選択" if tag.default_selected? %></span>
-        <%= link_to "編集", edit_person_tag_path(tag) %>
+        <span>
+          <%= link_to "編集", edit_person_tag_path(tag) %>
+          <%= button_to "削除", person_tag_path(tag), method: :delete, class: "link-button" %>
+        </span>
       </div>
     <% end %>
   <% else %>
