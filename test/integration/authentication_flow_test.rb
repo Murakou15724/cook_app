@@ -49,10 +49,22 @@ class AuthenticationFlowTest < ActionDispatch::IntegrationTest
   test "login rejects bad credentials and has no reset link" do
     get login_path
     assert_response :success
+    assert_select "form[autocomplete='off']"
+    assert_select "input[name='email'][autocomplete='off']"
+    assert_select "input[name='password'][autocomplete='off']"
     assert_select "a", { text: /パスワード/, count: 0 }
 
     post login_path, params: { email: "none@example.com", password: "password" }
     assert_response :unprocessable_content
     assert_select ".flash-alert"
+  end
+
+  test "signup form disables autocomplete" do
+    get signup_path
+    assert_response :success
+    assert_select "form[autocomplete='off']"
+    assert_select "input[name='user[email]'][autocomplete='off']"
+    assert_select "input[name='user[password]'][autocomplete='off']"
+    assert_select "input[name='user[password_confirmation]'][autocomplete='off']"
   end
 end

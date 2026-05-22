@@ -5,20 +5,20 @@
 
 <%= render "shared/error_messages", object: @user %>
 
-<%= form_with model: @user, url: signup_path, class: "form-card" do |form| %>
+<%= form_with model: @user, url: signup_path, class: "form-card", html: { autocomplete: "off" } do |form| %>
   <div class="field">
     <%= form.label :email, "メールアドレス" %>
-    <%= form.email_field :email, autocomplete: "email", required: true %>
+    <%= form.email_field :email, autocomplete: "off", required: true %>
   </div>
 
   <div class="field">
     <%= form.label :password, "パスワード" %>
-    <%= form.password_field :password, autocomplete: "new-password", required: true, minlength: 6 %>
+    <%= form.password_field :password, autocomplete: "off", required: true, minlength: 6 %>
   </div>
 
   <div class="field">
     <%= form.label :password_confirmation, "パスワード確認" %>
-    <%= form.password_field :password_confirmation, autocomplete: "new-password", required: true, minlength: 6 %>
+    <%= form.password_field :password_confirmation, autocomplete: "off", required: true, minlength: 6 %>
   </div>
 
   <%= form.submit "登録する", class: "primary-button" %>

@@ -3,15 +3,15 @@
   <p>登録済みのメールアドレスとパスワードを入力してください。</p>
 </section>
 
-<%= form_with url: login_path, class: "form-card" do |form| %>
+<%= form_with url: login_path, class: "form-card", html: { autocomplete: "off" } do |form| %>
   <div class="field">
     <%= form.label :email, "メールアドレス" %>
-    <%= form.email_field :email, autocomplete: "email", required: true %>
+    <%= form.email_field :email, autocomplete: "off", required: true %>
   </div>
 
   <div class="field">
     <%= form.label :password, "パスワード" %>
-    <%= form.password_field :password, autocomplete: "current-password", required: true %>
+    <%= form.password_field :password, autocomplete: "off", required: true %>
   </div>
 
   <%= form.submit "ログイン", class: "primary-button" %>

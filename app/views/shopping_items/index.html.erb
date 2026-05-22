@@ -11,8 +11,8 @@
 
 <section class="card">
   <div class="section-title"><h2>手動追加</h2></div>
-  <%= form_with url: shopping_items_path, class: "form-card" do |form| %>
-    <div class="form-group"><%= form.label :name, "食材名" %><%= form.text_field :name, placeholder: "例: 牛乳" %></div>
+  <%= form_with url: shopping_items_path, class: "form-card", html: { autocomplete: "off" } do |form| %>
+    <div class="form-group"><%= form.label :name, "食材名" %><%= form.text_field :name, placeholder: "例: 牛乳", autocomplete: "off" %></div>
     <%= form.submit "追加する", class: "primary-button" %>
   <% end %>
 </section>

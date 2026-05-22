@@ -3,7 +3,7 @@
   <h1>献立編集</h1>
 </section>
 
-<%= form_with url: admin_meal_plan_path(@meal_plan), method: :patch, class: "form-card" do |form| %>
-  <div class="form-group"><%= form.label :meal_date, "日付" %><%= form.date_field :meal_date, value: @meal_plan.meal_date %></div>
+<%= form_with url: admin_meal_plan_path(@meal_plan), method: :patch, class: "form-card", html: { autocomplete: "off" } do |form| %>
+  <div class="form-group"><%= form.label :meal_date, "日付" %><%= form.date_field :meal_date, value: @meal_plan.meal_date, autocomplete: "off" %></div>
   <%= form.submit "更新する", class: "primary-button" %>
 <% end %>

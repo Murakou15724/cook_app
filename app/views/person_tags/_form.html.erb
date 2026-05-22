@@ -1,8 +1,9 @@
 <%= form_with model: person_tag,
               url: person_tag.persisted? ? person_tag_path(person_tag) : person_tags_path,
               method: person_tag.persisted? ? :patch : :post,
-              class: "form-card" do |form| %>
-  <div class="form-group"><%= form.label :name, "人物名" %><%= form.text_field :name, placeholder: "例: 家族" %></div>
+              class: "form-card",
+              html: { autocomplete: "off" } do |form| %>
+  <div class="form-group"><%= form.label :name, "人物名" %><%= form.text_field :name, placeholder: "例: 家族", autocomplete: "off" %></div>
   <label class="check-row"><%= form.check_box :default_selected %> 新規献立で初期選択</label>
   <%= form.submit person_tag.persisted? ? "更新する" : "作成する", class: "primary-button" %>
 <% end %>
