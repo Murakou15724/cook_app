@@ -36,3 +36,14 @@
 
 # Codex outputs
 codex_outputs/
+
+# Python venv
+venv/
+.venv/
+
+# Codex
+codex_outputs/
+.codex/
+
+# AI temp
+tmp_ai/
