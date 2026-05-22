@@ -1,0 +1,9 @@
+<section class="page-title">
+  <p class="eyebrow">Admin</p>
+  <h1>買い物項目編集</h1>
+</section>
+
+<%= form_with url: admin_shopping_item_path(@shopping_item), method: :patch, class: "form-card" do |form| %>
+  <div class="form-group"><%= form.label :name, "食材名" %><%= form.text_field :name, value: @shopping_item.name %></div>
+  <%= form.submit "更新する", class: "primary-button" %>
+<% end %>

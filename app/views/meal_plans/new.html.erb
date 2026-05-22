@@ -1,0 +1,59 @@
+<section class="page-title">
+  <p class="eyebrow">Create</p>
+  <h1>献立作成</h1>
+  <p>日付、昼食/夕食、料理、必要食材、人物タグをまとめて登録します。</p>
+</section>
+
+<%= form_with url: meal_plans_path, class: "form-card" do |form| %>
+  <div class="form-group">
+    <%= form.label :meal_date, "日付" %>
+    <%= form.date_field :meal_date, value: Date.current %>
+  </div>
+
+  <div class="form-group">
+    <label>食事区分</label>
+    <div class="segment">
+      <label><%= radio_button_tag :meal_type, "lunch", true %> 昼食</label>
+      <label><%= radio_button_tag :meal_type, "dinner" %> 夕食</label>
+    </div>
+  </div>
+
+  <section class="dish-card">
+    <div class="section-title">
+      <h2>料理 1</h2>
+      <span class="status-badge blue">買い物連携</span>
+    </div>
+    <div class="form-group">
+      <%= label_tag :dish_name, "料理名" %>
+      <%= text_field_tag :dish_name, nil, placeholder: "例: カレーライス" %>
+    </div>
+    <div class="form-group">
+      <%= label_tag :memo, "メモ" %>
+      <%= text_area_tag :memo, nil, placeholder: "辛さ、下ごしらえ、外食メモなど" %>
+    </div>
+    <label class="check-row"><%= check_box_tag :eating_out %> 外食として記録</label>
+    <div class="ingredient-row">
+      <div class="check-icon">材</div>
+      <div>
+        <h3>必要食材</h3>
+        <p>食材名で数量も自由入力します。買い物リスト追加は初期ONです。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">
+      <h2>人物タグ</h2>
+      <span class="count-badge"><%= @person_tags.size %>件</span>
+    </div>
+    <% if @person_tags.any? %>
+      <div class="chip-list">
+        <% @person_tags.each do |tag| %><span><%= tag.name %></span><% end %>
+      </div>
+    <% else %>
+      <p class="empty-state">人物タグはまだありません。</p>
+    <% end %>
+  </section>
+
+  <%= form.submit "保存する", class: "primary-button" %>
+<% end %>

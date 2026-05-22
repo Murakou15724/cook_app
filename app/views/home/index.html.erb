@@ -1,39 +1,59 @@
 <section class="page-title">
+  <p class="eyebrow">今日の予定</p>
   <h1>今日の献立</h1>
   <p><%= l(@today, format: :long) %></p>
 </section>
 
-<div class="action-row">
-  <%= link_to "プロフィール編集", edit_profile_path, class: "secondary-button" %>
+<div class="quick-actions">
+  <%= link_to "献立を作成", new_meal_plan_path, class: "primary-button" %>
+  <%= link_to "買い物リスト", shopping_items_path, class: "secondary-button" %>
+  <%= link_to "プロフィール", edit_profile_path, class: "secondary-button" %>
   <% if current_user.admin? %>
-    <span class="admin-chip">管理者ホーム</span>
+    <%= link_to "管理者ホーム", admin_root_path, class: "admin-chip" %>
   <% end %>
 </div>
 
-<% ["lunch", "dinner"].each do |meal_type| %>
-  <% meal_plan = @meal_plans[meal_type] %>
-  <section class="meal-card">
-    <h2><%= meal_type_label(meal_type) %></h2>
+<section class="today-card">
+  <div class="section-title">
+    <h2>昼食 / 夕食</h2>
+    <span class="date-badge"><%= @today.strftime("%m/%d") %></span>
+  </div>
 
-    <% if meal_plan.present? %>
-      <% if meal_plan.person_tags.any? %>
-        <p class="tag-list">
-          <% meal_plan.person_tags.each do |tag| %>
-            <span><%= tag.name %></span>
-          <% end %>
-        </p>
-      <% end %>
+  <% ["lunch", "dinner"].each do |meal_type| %>
+    <% meal_plan = @meal_plans[meal_type] %>
+    <div class="meal-block">
+      <div class="meal-head">
+        <h2 class="meal-label"><%= meal_type_label(meal_type) %></h2>
+        <% if meal_plan.present? %>
+          <%= link_to "編集", edit_meal_plan_path(meal_plan), class: "edit-link" %>
+        <% else %>
+          <%= link_to "追加", new_meal_plan_path, class: "edit-link" %>
+        <% end %>
+      </div>
 
-      <% meal_plan.plan_dishes.ordered.each do |dish| %>
-        <article class="dish-card">
-          <h3><%= dish.name %><%= "（外食）" if dish.eating_out? %></h3>
-          <% if dish.memo.present? %>
-            <p><%= simple_format(dish.memo) %></p>
-          <% end %>
-        </article>
+      <% if meal_plan.present? %>
+        <% if meal_plan.person_tags.any? %>
+          <p class="tag-list">
+            <% meal_plan.person_tags.each do |tag| %>
+              <span><%= tag.name %></span>
+            <% end %>
+          </p>
+        <% end %>
+
+        <% meal_plan.plan_dishes.ordered.each do |dish| %>
+          <article class="dish">
+            <div class="dish-icon"><%= dish.eating_out? ? "外" : "食" %></div>
+            <div>
+              <h3><%= dish.name %><%= "（外食）" if dish.eating_out? %></h3>
+              <% if dish.memo.present? %>
+                <p><%= simple_format(dish.memo) %></p>
+              <% end %>
+            </div>
+          </article>
+        <% end %>
+      <% else %>
+        <p class="empty-state">まだ<%= meal_type_label(meal_type) %>の献立はありません。</p>
       <% end %>
-    <% else %>
-      <p class="empty-state">まだ<%= meal_type_label(meal_type) %>の献立はありません。</p>
-    <% end %>
-  </section>
-<% end %>
+    </div>
+  <% end %>
+</section>

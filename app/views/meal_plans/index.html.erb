@@ -1,0 +1,45 @@
+<section class="page-title">
+  <p class="eyebrow">Menu Plan</p>
+  <h1>献立一覧</h1>
+  <p>今日以降の昼食・夕食を確認します。</p>
+</section>
+
+<div class="toolbar">
+  <div class="summary-card">
+    <span>表示範囲</span>
+    <strong>今日以降</strong>
+  </div>
+  <%= link_to "献立作成", new_meal_plan_path, class: "create-button" %>
+</div>
+
+<% if @meal_plans.any? %>
+  <% @meal_plans.group_by(&:meal_date).each do |date, plans| %>
+    <section class="card">
+      <div class="section-title">
+        <h2><%= l(date, format: :long) %></h2>
+        <span class="date-badge"><%= date.strftime("%m/%d") %></span>
+      </div>
+      <% ["lunch", "dinner"].each do |meal_type| %>
+        <% plan = plans.find { |item| item.meal_type == meal_type } %>
+        <div class="meal-block">
+          <div class="meal-head">
+            <span class="meal-label"><%= meal_type_label(meal_type) %></span>
+            <% if plan %><%= link_to "編集", edit_meal_plan_path(plan), class: "edit-link" %><% end %>
+          </div>
+          <% if plan %>
+            <% plan.plan_dishes.ordered.each do |dish| %>
+              <div class="dish">
+                <div class="dish-icon"><%= dish.eating_out? ? "外" : "食" %></div>
+                <div><h3><%= dish.name %></h3><p><%= dish.memo.presence || "メモなし" %></p></div>
+              </div>
+            <% end %>
+          <% else %>
+            <p class="empty-state">未登録</p>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+<% else %>
+  <p class="empty-state">今日以降の献立はまだありません。</p>
+<% end %>

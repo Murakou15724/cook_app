@@ -1,0 +1,43 @@
+<section class="page-title">
+  <p class="eyebrow">Shopping</p>
+  <h1>買い物リスト</h1>
+  <p>献立由来と手動追加の買い物を管理します。</p>
+</section>
+
+<div class="summary">
+  <div class="summary-card"><span>未購入</span><strong><%= @unpurchased_items.size %></strong></div>
+  <div class="summary-card"><span>購入済み</span><strong><%= @purchased_items.size %></strong></div>
+</div>
+
+<section class="card">
+  <div class="section-title"><h2>手動追加</h2></div>
+  <%= form_with url: shopping_items_path, class: "form-card" do |form| %>
+    <div class="form-group"><%= form.label :name, "食材名" %><%= form.text_field :name, placeholder: "例: 牛乳" %></div>
+    <%= form.submit "追加する", class: "primary-button" %>
+  <% end %>
+</section>
+
+<section class="plan-group">
+  <div class="group-title"><span>未購入</span><span>日付・昼夕ごとに表示</span></div>
+  <% if @unpurchased_items.any? %>
+    <% @unpurchased_items.each do |item| %>
+      <article class="list-card">
+        <div class="section-title"><h3><%= item.name %></h3><span class="status-badge blue"><%= item.manual? ? "手動追加" : "献立由来" %></span></div>
+        <p>購入済み切替・削除は後続issueで実装します。</p>
+      </article>
+    <% end %>
+  <% else %>
+    <p class="empty-state">未購入の項目はありません。</p>
+  <% end %>
+</section>
+
+<section class="plan-group">
+  <div class="group-title"><span>購入済み</span><span>一括削除対象</span></div>
+  <% if @purchased_items.any? %>
+    <% @purchased_items.each do |item| %>
+      <article class="list-card"><h3><%= item.name %></h3><p><%= item.purchased_at&.strftime("%Y/%m/%d %H:%M") %></p></article>
+    <% end %>
+  <% else %>
+    <p class="empty-state">購入済みの項目はありません。</p>
+  <% end %>
+</section>

@@ -1,0 +1,61 @@
+<section class="page-title">
+  <p class="eyebrow">Development</p>
+  <h1>全ページリンク</h1>
+  <p>開発中の画面確認用リンク集です。</p>
+</section>
+
+<div class="dev-grid">
+  <section class="card">
+    <div class="section-title"><h2>一般画面</h2></div>
+    <% [
+      ["ホーム", root_path],
+      ["ログイン", login_path],
+      ["新規登録", signup_path],
+      ["プロフィール編集", edit_profile_path],
+      ["献立一覧", meal_plans_path],
+      ["献立作成", new_meal_plan_path],
+      ["買い物リスト", shopping_items_path],
+      ["過去料理一覧", cooking_records_path],
+      ["人物タグ管理", person_tags_path]
+    ].each do |label, path| %>
+      <div class="dev-link-row"><span><%= label %></span><%= link_to path, path %></div>
+    <% end %>
+  </section>
+
+  <section class="card">
+    <div class="section-title"><h2>IDが必要な画面</h2></div>
+    <div class="dev-link-row">
+      <span>献立編集</span>
+      <% if @meal_plan %><%= link_to edit_meal_plan_path(@meal_plan), edit_meal_plan_path(@meal_plan) %><% else %><span class="small-note">/meal_plans/:id/edit</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>過去料理詳細</span>
+      <% if @cooking_record %><%= link_to cooking_record_path(@cooking_record), cooking_record_path(@cooking_record) %><% else %><span class="small-note">/cooking_records/:id</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>過去料理編集</span>
+      <% if @cooking_record %><%= link_to edit_cooking_record_path(@cooking_record), edit_cooking_record_path(@cooking_record) %><% else %><span class="small-note">/cooking_records/:id/edit</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>人物タグ編集</span>
+      <% if @person_tag %><%= link_to edit_person_tag_path(@person_tag), edit_person_tag_path(@person_tag) %><% else %><span class="small-note">/person_tags/:id/edit</span><% end %>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-title"><h2>管理者・エラー</h2></div>
+    <% [
+      ["管理者ホーム", admin_root_path],
+      ["ユーザー管理", admin_users_path],
+      ["献立管理", admin_meal_plans_path],
+      ["過去料理管理", admin_cooking_records_path],
+      ["買い物管理", admin_shopping_items_path],
+      ["人物タグ管理", admin_person_tags_path],
+      ["403", forbidden_path],
+      ["404", not_found_path],
+      ["500", internal_server_error_path]
+    ].each do |label, path| %>
+      <div class="dev-link-row"><span><%= label %></span><%= link_to path, path %></div>
+    <% end %>
+  </section>
+</div>

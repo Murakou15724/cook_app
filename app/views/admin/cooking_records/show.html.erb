@@ -1,0 +1,8 @@
+<section class="page-title">
+  <p class="eyebrow">Admin</p>
+  <h1><%= @cooking_record.name %></h1>
+  <p><%= @cooking_record.user.email %></p>
+</section>
+
+<section class="card"><p><%= @cooking_record.memo.presence || "メモなし" %></p></section>
+<%= link_to "編集", edit_admin_cooking_record_path(@cooking_record), class: "secondary-button" %>

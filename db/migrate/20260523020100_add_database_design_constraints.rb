@@ -1,0 +1,46 @@
+class AddDatabaseDesignConstraints < ActiveRecord::Migration[7.1]
+  def change
+    add_check_constraint :users,
+                         "role IN (0, 1)",
+                         name: "chk_users_role"
+
+    add_check_constraint :meal_plans,
+                         "meal_type IN (0, 1)",
+                         name: "chk_meal_plans_meal_type"
+    add_check_constraint :meal_plans,
+                         "((migrated = 0 AND migrated_at IS NULL) OR (migrated = 1 AND migrated_at IS NOT NULL))",
+                         name: "chk_meal_plans_migrated_at"
+
+    add_check_constraint :plan_dishes,
+                         "CHAR_LENGTH(TRIM(name)) > 0",
+                         name: "chk_plan_dishes_name_present"
+    add_check_constraint :plan_dishes,
+                         "position >= 0",
+                         name: "chk_plan_dishes_position"
+
+    add_check_constraint :dish_ingredients,
+                         "CHAR_LENGTH(TRIM(name)) > 0",
+                         name: "chk_dish_ingredients_name_present"
+
+    add_check_constraint :shopping_items,
+                         "CHAR_LENGTH(TRIM(name)) > 0",
+                         name: "chk_shopping_items_name_present"
+    add_check_constraint :shopping_items,
+                         "((manual = 1 AND dish_ingredient_id IS NULL) OR (manual = 0 AND dish_ingredient_id IS NOT NULL))",
+                         name: "chk_shopping_items_manual_source"
+    add_check_constraint :shopping_items,
+                         "((purchased = 0 AND purchased_at IS NULL) OR (purchased = 1 AND purchased_at IS NOT NULL))",
+                         name: "chk_shopping_items_purchased_at"
+
+    add_check_constraint :cooking_records,
+                         "meal_type IN (0, 1)",
+                         name: "chk_cooking_records_meal_type"
+    add_check_constraint :cooking_records,
+                         "CHAR_LENGTH(TRIM(name)) > 0",
+                         name: "chk_cooking_records_name_present"
+
+    add_check_constraint :person_tags,
+                         "CHAR_LENGTH(TRIM(name)) > 0",
+                         name: "chk_person_tags_name_present"
+  end
+end

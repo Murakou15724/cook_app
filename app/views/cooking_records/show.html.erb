@@ -1,0 +1,18 @@
+<section class="page-title">
+  <p class="eyebrow">Record Detail</p>
+  <h1><%= @cooking_record.name %></h1>
+  <p><%= l(@cooking_record.cooked_on, format: :long) %> / <%= meal_type_label(@cooking_record.meal_type) %></p>
+</section>
+
+<section class="card">
+  <div class="section-title"><h2>詳細</h2><span class="status-badge"><%= @cooking_record.eating_out? ? "外食" : "通常" %></span></div>
+  <p><%= @cooking_record.memo.presence || "メモはありません。" %></p>
+  <% if @cooking_record.person_tags.any? %>
+    <div class="chip-list"><% @cooking_record.person_tags.each do |tag| %><span><%= tag.name %></span><% end %></div>
+  <% end %>
+</section>
+
+<div class="quick-actions">
+  <%= link_to "編集", edit_cooking_record_path(@cooking_record), class: "secondary-button" %>
+  <%= link_to "一覧へ", cooking_records_path, class: "secondary-button" %>
+</div>

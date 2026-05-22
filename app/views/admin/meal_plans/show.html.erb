@@ -1,0 +1,14 @@
+<section class="page-title">
+  <p class="eyebrow">Admin</p>
+  <h1>献立詳細</h1>
+  <p><%= @meal_plan.user.email %></p>
+</section>
+
+<section class="card">
+  <div class="section-title"><h2><%= l(@meal_plan.meal_date, format: :long) %></h2><span class="status-badge"><%= meal_type_label(@meal_plan.meal_type) %></span></div>
+  <% @meal_plan.plan_dishes.ordered.each do |dish| %>
+    <div class="dish"><div class="dish-icon">食</div><div><h3><%= dish.name %></h3><p><%= dish.memo.presence || "メモなし" %></p></div></div>
+  <% end %>
+</section>
+
+<%= link_to "編集", edit_admin_meal_plan_path(@meal_plan), class: "secondary-button" %>

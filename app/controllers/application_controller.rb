@@ -20,4 +20,10 @@ class ApplicationController < ActionController::Base
   def require_no_login!
     redirect_to root_path if logged_in?
   end
+
+  def require_admin!
+    return if current_user&.admin?
+
+    redirect_to forbidden_path, alert: "管理者権限が必要です"
+  end
 end

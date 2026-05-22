@@ -12,11 +12,17 @@
 
   <body>
     <div class="app-shell">
-      <header class="app-header">
-        <%= link_to "料理アプリ", logged_in? ? root_path : login_path, class: "brand" %>
+      <header class="header">
+        <div>
+          <p class="eyebrow">Cook Plan</p>
+          <%= link_to "料理アプリ", logged_in? ? root_path : login_path, class: "brand" %>
+        </div>
 
         <% if logged_in? %>
-          <%= button_to "ログアウト", logout_path, method: :delete, class: "link-button" %>
+          <div class="header-actions">
+            <%= link_to "全ページ", dev_pages_path, class: "ghost-button" %>
+            <%= button_to "ログアウト", logout_path, method: :delete, class: "link-button" %>
+          </div>
         <% end %>
       </header>
 
@@ -35,11 +41,11 @@
       <% if logged_in? %>
         <nav class="bottom-nav" aria-label="主要ナビゲーション">
           <%= link_to "ホーム", root_path, class: current_page?(root_path) ? "active" : nil %>
-          <%= link_to "献立一覧", "#", class: "disabled", aria: { disabled: true } %>
-          <%= link_to "献立作成", "#", class: "disabled", aria: { disabled: true } %>
-          <%= link_to "買い物", "#", class: "disabled", aria: { disabled: true } %>
-          <%= link_to "過去料理", "#", class: "disabled", aria: { disabled: true } %>
-          <%= link_to "人物タグ", "#", class: "disabled", aria: { disabled: true } %>
+          <%= link_to "献立", meal_plans_path, class: controller_name == "meal_plans" ? "active" : nil %>
+          <%= link_to "作成", new_meal_plan_path, class: current_page?(new_meal_plan_path) ? "active" : nil %>
+          <%= link_to "買物", shopping_items_path, class: controller_name == "shopping_items" ? "active" : nil %>
+          <%= link_to "履歴", cooking_records_path, class: controller_name == "cooking_records" ? "active" : nil %>
+          <%= link_to "タグ", person_tags_path, class: controller_name == "person_tags" ? "active" : nil %>
         </nav>
       <% end %>
     </div>

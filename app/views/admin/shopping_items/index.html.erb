@@ -1,0 +1,14 @@
+<section class="page-title">
+  <p class="eyebrow">Admin</p>
+  <h1>買い物管理</h1>
+</section>
+
+<section class="card">
+  <% if @shopping_items.any? %>
+    <% @shopping_items.each do |item| %>
+      <div class="dev-link-row"><span><%= item.user.email %> / <%= item.name %></span><%= link_to "詳細", admin_shopping_item_path(item) %></div>
+    <% end %>
+  <% else %>
+    <p class="empty-state">買い物項目はありません。</p>
+  <% end %>
+</section>
