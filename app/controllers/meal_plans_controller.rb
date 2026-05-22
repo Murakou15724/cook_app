@@ -1,5 +1,6 @@
 class MealPlansController < ApplicationController
   before_action :authenticate_user!
+  before_action :migrate_past_meal_plans!, only: [:index]
   before_action :set_meal_plan, only: [:edit, :update, :destroy, :move_dish]
 
   def index

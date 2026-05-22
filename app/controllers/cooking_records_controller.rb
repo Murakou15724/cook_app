@@ -1,5 +1,6 @@
 class CookingRecordsController < ApplicationController
   before_action :authenticate_user!
+  before_action :migrate_past_meal_plans!, only: [:index]
   before_action :set_cooking_record, only: [:show, :edit, :update, :destroy]
 
   def index

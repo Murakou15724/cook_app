@@ -5,38 +5,104 @@
 </section>
 
 <div class="summary">
-  <div class="summary-card"><span>未購入</span><strong><%= @unpurchased_items.size %></strong></div>
-  <div class="summary-card"><span>購入済み</span><strong><%= @purchased_items.size %></strong></div>
+  <div class="summary-card"><span>未購入</span><strong><%= @unpurchased_count %></strong></div>
+  <div class="summary-card"><span>購入済み</span><strong><%= @purchased_count %></strong></div>
 </div>
+
+<%= render "shared/error_messages", object: @shopping_item %>
 
 <section class="card">
   <div class="section-title"><h2>手動追加</h2></div>
-  <%= form_with url: shopping_items_path, class: "form-card", html: { autocomplete: "off" } do |form| %>
-    <div class="form-group"><%= form.label :name, "食材名" %><%= form.text_field :name, placeholder: "例: 牛乳", autocomplete: "off" %></div>
+  <%= form_with model: @shopping_item, url: shopping_items_path, class: "form-card", html: { autocomplete: "off" } do |form| %>
+    <div class="form-group"><%= form.label :name, "食材名" %><%= form.text_field :name, autocomplete: "off" %></div>
     <%= form.submit "追加する", class: "primary-button" %>
   <% end %>
 </section>
 
 <section class="plan-group">
-  <div class="group-title"><span>未購入</span><span>日付・昼夕ごとに表示</span></div>
-  <% if @unpurchased_items.any? %>
-    <% @unpurchased_items.each do |item| %>
-      <article class="list-card">
-        <div class="section-title"><h3><%= item.name %></h3><span class="status-badge blue"><%= item.manual? ? "手動追加" : "献立由来" %></span></div>
-        <p>購入済み切替・削除は後続issueで実装します。</p>
-      </article>
+  <div class="group-title"><span>献立由来</span><span>日付・昼夕ごと</span></div>
+  <% if @unpurchased_plan_groups.any? %>
+    <% @unpurchased_plan_groups.group_by { |group| [group[:meal_date], group[:meal_type]] }.each do |(meal_date, meal_type), groups| %>
+      <section class="card">
+        <div class="section-title">
+          <h2><%= l(meal_date, format: :long) %></h2>
+          <span class="status-badge blue"><%= meal_type_label(meal_type) %></span>
+        </div>
+        <% groups.each do |group| %>
+          <article class="list-card">
+            <div class="section-title">
+              <h3><%= group[:name] %></h3>
+              <span class="count-badge"><%= group[:items].size %>件</span>
+            </div>
+            <p>使用料理: <%= group[:dishes].join("、") %></p>
+            <div class="item-actions">
+              <%= button_to "購入済み", toggle_purchased_shopping_item_path(group[:items].first), method: :patch, class: "secondary-button" %>
+              <%= button_to "削除", shopping_item_path(group[:items].first), method: :delete, class: "danger-button", data: { turbo_confirm: "本当に削除しますか？" } %>
+            </div>
+          </article>
+        <% end %>
+      </section>
     <% end %>
   <% else %>
-    <p class="empty-state">未購入の項目はありません。</p>
+    <p class="empty-state">献立由来の未購入項目はありません。</p>
   <% end %>
 </section>
 
 <section class="plan-group">
-  <div class="group-title"><span>購入済み</span><span>一括削除対象</span></div>
-  <% if @purchased_items.any? %>
-    <% @purchased_items.each do |item| %>
-      <article class="list-card"><h3><%= item.name %></h3><p><%= item.purchased_at&.strftime("%Y/%m/%d %H:%M") %></p></article>
+  <div class="group-title"><span>手動追加</span><span>日付・昼夕なし</span></div>
+  <% if @manual_unpurchased_items.any? %>
+    <section class="card">
+      <% @manual_unpurchased_items.each do |item| %>
+        <article class="list-card">
+          <div class="section-title"><h3><%= item.name %></h3><span class="status-badge">手動追加</span></div>
+          <div class="item-actions">
+            <%= button_to "購入済み", toggle_purchased_shopping_item_path(item), method: :patch, class: "secondary-button" %>
+            <%= button_to "削除", shopping_item_path(item), method: :delete, class: "danger-button", data: { turbo_confirm: "本当に削除しますか？" } %>
+          </div>
+        </article>
+      <% end %>
+    </section>
+  <% else %>
+    <p class="empty-state">手動追加の未購入項目はありません。</p>
+  <% end %>
+</section>
+
+<section class="plan-group">
+  <div class="group-title">
+    <span>購入済み</span>
+    <% if @purchased_count.positive? %>
+      <%= button_to "購入済みを一括削除", destroy_purchased_shopping_items_path, method: :delete, class: "danger-button", data: { turbo_confirm: "本当に削除しますか？" } %>
     <% end %>
+  </div>
+
+  <% if @purchased_plan_groups.any? || @manual_purchased_items.any? %>
+    <section class="card">
+      <% @purchased_plan_groups.each do |group| %>
+        <article class="list-card">
+          <div class="section-title">
+            <h3><%= group[:name] %></h3>
+            <span class="status-badge green"><%= l(group[:meal_date], format: :long) %> / <%= meal_type_label(group[:meal_type]) %></span>
+          </div>
+          <p>使用料理: <%= group[:dishes].join("、") %></p>
+          <p><%= group[:items].filter_map(&:purchased_at).min&.strftime("%Y/%m/%d %H:%M") %></p>
+          <div class="item-actions">
+            <%= button_to "未購入に戻す", toggle_purchased_shopping_item_path(group[:items].first), method: :patch, class: "secondary-button" %>
+            <%= button_to "削除", shopping_item_path(group[:items].first), method: :delete, class: "danger-button", data: { turbo_confirm: "本当に削除しますか？" } %>
+          </div>
+        </article>
+      <% end %>
+
+      <% @manual_purchased_items.each do |item| %>
+        <article class="list-card">
+          <div class="section-title"><h3><%= item.name %></h3><span class="status-badge">手動追加</span></div>
+          <p><%= item.purchased_at&.strftime("%Y/%m/%d %H:%M") %></p>
+          <div class="item-actions">
+            <%= button_to "未購入に戻す", toggle_purchased_shopping_item_path(item), method: :patch, class: "secondary-button" %>
+            <%= button_to "削除", shopping_item_path(item), method: :delete, class: "danger-button", data: { turbo_confirm: "本当に削除しますか？" } %>
+          </div>
+        </article>
+      <% end %>
+    </section>
   <% else %>
     <p class="empty-state">購入済みの項目はありません。</p>
   <% end %>

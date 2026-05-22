@@ -653,3 +653,15 @@ select:focus {
   font-weight: 800;
   text-decoration: none;
 }
+
+.item-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.item-actions form,
+.group-title form {
+  margin: 0;
+}

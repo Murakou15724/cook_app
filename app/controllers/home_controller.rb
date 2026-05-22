@@ -1,5 +1,6 @@
 class HomeController < ApplicationController
   before_action :authenticate_user!
+  before_action :migrate_past_meal_plans!
 
   def index
     @today = Date.current

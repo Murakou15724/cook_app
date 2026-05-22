@@ -1,12 +1,19 @@
 class ShoppingItem < ApplicationRecord
   belongs_to :user
   belongs_to :dish_ingredient, optional: true
+  has_one :plan_dish, through: :dish_ingredient
+  has_one :meal_plan, through: :plan_dish
 
   before_validation :normalize_name
   before_validation :sync_purchased_at
 
   validates :name, presence: true
   validate :manual_item_source_consistency
+
+  scope :unpurchased, -> { where(purchased: false) }
+  scope :purchased, -> { where(purchased: true) }
+  scope :manual_items, -> { where(manual: true) }
+  scope :meal_plan_items, -> { where(manual: false) }
 
   private
 
