@@ -1,0 +1,39 @@
+<section class="page-title">
+  <h1>今日の献立</h1>
+  <p><%= l(@today, format: :long) %></p>
+</section>
+
+<div class="action-row">
+  <%= link_to "プロフィール編集", edit_profile_path, class: "secondary-button" %>
+  <% if current_user.admin? %>
+    <span class="admin-chip">管理者ホーム</span>
+  <% end %>
+</div>
+
+<% ["lunch", "dinner"].each do |meal_type| %>
+  <% meal_plan = @meal_plans[meal_type] %>
+  <section class="meal-card">
+    <h2><%= meal_type_label(meal_type) %></h2>
+
+    <% if meal_plan.present? %>
+      <% if meal_plan.person_tags.any? %>
+        <p class="tag-list">
+          <% meal_plan.person_tags.each do |tag| %>
+            <span><%= tag.name %></span>
+          <% end %>
+        </p>
+      <% end %>
+
+      <% meal_plan.plan_dishes.ordered.each do |dish| %>
+        <article class="dish-card">
+          <h3><%= dish.name %><%= "（外食）" if dish.eating_out? %></h3>
+          <% if dish.memo.present? %>
+            <p><%= simple_format(dish.memo) %></p>
+          <% end %>
+        </article>
+      <% end %>
+    <% else %>
+      <p class="empty-state">まだ<%= meal_type_label(meal_type) %>の献立はありません。</p>
+    <% end %>
+  </section>
+<% end %>
