@@ -48,7 +48,12 @@
     </div>
     <% if @person_tags.any? %>
       <div class="chip-list">
-        <% @person_tags.each do |tag| %><span><%= tag.name %></span><% end %>
+        <% @person_tags.each do |tag| %>
+          <label class="check-row">
+            <%= check_box_tag "person_tag_ids[]", tag.id, tag.default_selected? %>
+            <%= tag.name %>
+          </label>
+        <% end %>
       </div>
     <% else %>
       <p class="empty-state">人物タグはまだありません。</p>
