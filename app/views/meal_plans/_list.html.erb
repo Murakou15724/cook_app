@@ -1,0 +1,108 @@
+<%= turbo_frame_tag "meal_plans", data: { controller: "meal-plan-edit" } do %>
+  <section class="page-title">
+    <p class="eyebrow">Menu Plan</p>
+    <h1>献立一覧</h1>
+    <p>昼食・夕食を確認します。</p>
+  </section>
+
+  <% if @meal_plans.any? %>
+    <% @meal_plans.group_by(&:meal_date).each do |date, plans| %>
+      <section class="card">
+        <div class="section-title">
+          <h2><%= app_date(date) %></h2>
+        </div>
+        <% ["lunch", "dinner"].each do |meal_type| %>
+          <% plan = plans.find { |item| item.meal_type == meal_type } %>
+          <div class="meal-block">
+            <div class="meal-head">
+              <div class="meal-head-main">
+                <span class="meal-label"><%= meal_type_label(meal_type) %></span>
+                <% if plan&.person_tags&.any? %>
+                  <span class="meal-tag-line"><%= plan.person_tags.map(&:name).join("、") %></span>
+                <% end %>
+              </div>
+            </div>
+            <% if plan %>
+              <% plan.plan_dishes.ordered.each do |dish| %>
+                <button
+                  type="button"
+                  class="dish meal-edit-trigger"
+                  data-action="click->meal-plan-edit#open"
+                  data-meal-plan-edit-update-url-param="<%= meal_plan_path(plan, format: :turbo_stream) %>">
+                  <div>
+                    <h3><%= dish.name %></h3>
+                    <% if dish.memo.present? %>
+                      <p><%= simple_format(dish.memo) %></p>
+                    <% end %>
+                  </div>
+                </button>
+              <% end %>
+
+              <template data-meal-plan-edit-target="template" data-plan-id="<%= plan.id %>">
+                <%= form_with url: meal_plan_path(plan, format: :turbo_stream), method: :patch, class: "meal-drawer-form", data: { meal_plan_edit_target: "form" } do %>
+                  <%= hidden_field_tag :quick_update, "1" %>
+                  <div class="tag-list drawer-tag-list">
+                    <% @person_tags.each do |tag| %>
+                      <label>
+                        <%= check_box_tag "person_tag_ids[]", tag.id, plan.person_tag_ids.include?(tag.id) %>
+                        <span><%= tag.name %></span>
+                      </label>
+                    <% end %>
+                  </div>
+                  <% plan.plan_dishes.ordered.each do |dish| %>
+                    <section class="drawer-dish-fields">
+                      <label>献立名</label>
+                      <%= text_field_tag "dishes[#{dish.id}][name]", dish.name, autocomplete: "off" %>
+                      <label>メモ</label>
+                      <%= text_area_tag "dishes[#{dish.id}][memo]", dish.memo, autocomplete: "off" %>
+                      <div class="drawer-subhead">
+                        <span>食材</span>
+                        <button type="button" class="ghost-button mini-button" data-action="meal-plan-edit#addIngredient" data-dish-id="<%= dish.id %>">追加</button>
+                      </div>
+                      <div class="drawer-ingredient-list" data-dish-id="<%= dish.id %>">
+                        <% dish.dish_ingredients.order(:id).each do |ingredient| %>
+                          <div class="drawer-ingredient-row" data-meal-plan-edit-target="ingredientRow">
+                            <%= hidden_field_tag "ingredients[existing_#{ingredient.id}][id]", ingredient.id %>
+                            <%= text_field_tag "ingredients[existing_#{ingredient.id}][name]", ingredient.name, autocomplete: "off" %>
+                            <%= hidden_field_tag "ingredients[existing_#{ingredient.id}][delete]", "0", data: { meal_plan_edit_target: "deleteField" } %>
+                            <button type="button" class="danger-icon-button" aria-label="食材を削除" data-action="meal-plan-edit#removeIngredient">×</button>
+                          </div>
+                        <% end %>
+                      </div>
+                    </section>
+                  <% end %>
+                <% end %>
+              </template>
+            <% else %>
+              <p class="empty-state">未登録</p>
+            <% end %>
+          </div>
+        <% end %>
+      </section>
+    <% end %>
+  <% else %>
+    <p class="empty-state">献立はまだありません。</p>
+  <% end %>
+
+  <div class="drawer-backdrop" hidden data-meal-plan-edit-target="backdrop" data-action="click->meal-plan-edit#close"></div>
+  <section class="edit-drawer" hidden data-meal-plan-edit-target="drawer" aria-modal="true" role="dialog" aria-labelledby="meal-plan-edit-title">
+    <div class="drawer-handle"></div>
+    <div class="drawer-head">
+      <h2 id="meal-plan-edit-title">献立を編集</h2>
+      <button type="button" class="close-btn" aria-label="閉じる" data-action="meal-plan-edit#close">×</button>
+    </div>
+    <div data-meal-plan-edit-target="body"></div>
+    <p class="drawer-note">食材の編集・追加・削除は、該当する買い物項目にも反映されます。</p>
+    <div class="drawer-actions">
+      <button type="button" class="save-btn" data-action="meal-plan-edit#save">保存する</button>
+      <button type="button" class="secondary-button" data-action="meal-plan-edit#close">閉じる</button>
+    </div>
+  </section>
+
+  <template data-meal-plan-edit-target="ingredientTemplate">
+    <div class="drawer-ingredient-row">
+      <input type="text" autocomplete="off">
+      <button type="button" class="danger-icon-button" aria-label="食材を削除" data-action="meal-plan-edit#removeIngredient">×</button>
+    </div>
+  </template>
+<% end %>

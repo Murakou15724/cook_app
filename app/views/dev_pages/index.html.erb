@@ -16,6 +16,7 @@
       ["献立作成", new_meal_plan_path],
       ["買い物リスト", shopping_items_path],
       ["過去料理一覧", cooking_records_path],
+      ["人物タグ作成", new_person_tag_path],
       ["人物タグ管理", person_tags_path]
     ].each do |label, path| %>
       <div class="dev-link-row"><span><%= label %></span><%= link_to path, path %></div>
@@ -39,6 +40,42 @@
     <div class="dev-link-row">
       <span>人物タグ編集</span>
       <% if @person_tag %><%= link_to edit_person_tag_path(@person_tag), edit_person_tag_path(@person_tag) %><% else %><span class="small-note">/person_tags/:id/edit</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>管理者ユーザー編集</span>
+      <% if @admin_user %><%= link_to edit_admin_user_path(@admin_user), edit_admin_user_path(@admin_user) %><% else %><span class="small-note">/admin/users/:id/edit</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>管理者献立詳細</span>
+      <% if @admin_meal_plan %><%= link_to admin_meal_plan_path(@admin_meal_plan), admin_meal_plan_path(@admin_meal_plan) %><% else %><span class="small-note">/admin/meal_plans/:id</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>管理者献立編集</span>
+      <% if @admin_meal_plan %><%= link_to edit_admin_meal_plan_path(@admin_meal_plan), edit_admin_meal_plan_path(@admin_meal_plan) %><% else %><span class="small-note">/admin/meal_plans/:id/edit</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>管理者過去料理詳細</span>
+      <% if @admin_cooking_record %><%= link_to admin_cooking_record_path(@admin_cooking_record), admin_cooking_record_path(@admin_cooking_record) %><% else %><span class="small-note">/admin/cooking_records/:id</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>管理者過去料理編集</span>
+      <% if @admin_cooking_record %><%= link_to edit_admin_cooking_record_path(@admin_cooking_record), edit_admin_cooking_record_path(@admin_cooking_record) %><% else %><span class="small-note">/admin/cooking_records/:id/edit</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>管理者買い物詳細</span>
+      <% if @admin_shopping_item %><%= link_to admin_shopping_item_path(@admin_shopping_item), admin_shopping_item_path(@admin_shopping_item) %><% else %><span class="small-note">/admin/shopping_items/:id</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>管理者買い物編集</span>
+      <% if @admin_shopping_item %><%= link_to edit_admin_shopping_item_path(@admin_shopping_item), edit_admin_shopping_item_path(@admin_shopping_item) %><% else %><span class="small-note">/admin/shopping_items/:id/edit</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>管理者人物タグ詳細</span>
+      <% if @admin_person_tag %><%= link_to admin_person_tag_path(@admin_person_tag), admin_person_tag_path(@admin_person_tag) %><% else %><span class="small-note">/admin/person_tags/:id</span><% end %>
+    </div>
+    <div class="dev-link-row">
+      <span>管理者人物タグ編集</span>
+      <% if @admin_person_tag %><%= link_to edit_admin_person_tag_path(@admin_person_tag), edit_admin_person_tag_path(@admin_person_tag) %><% else %><span class="small-note">/admin/person_tags/:id/edit</span><% end %>
     </div>
   </section>
 

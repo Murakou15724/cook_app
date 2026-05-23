@@ -7,7 +7,7 @@
   <% if @meal_plans.any? %>
     <% @meal_plans.each do |plan| %>
       <div class="dev-link-row">
-        <span><%= plan.user.email %> / <%= l(plan.meal_date, format: :long) %> / <%= meal_type_label(plan.meal_type) %></span>
+        <span><%= plan.user.email %> / <%= app_date(plan.meal_date) %> / <%= meal_type_label(plan.meal_type) %></span>
         <%= link_to "詳細", admin_meal_plan_path(plan) %>
       </div>
     <% end %>

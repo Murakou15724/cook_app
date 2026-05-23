@@ -22,12 +22,13 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :shopping_items, only: [:index, :create, :destroy] do
+  resources :shopping_items, only: [:index, :create, :update, :destroy] do
     member do
       patch :toggle_purchased
     end
 
     collection do
+      patch :reorder
       delete :destroy_purchased
     end
   end

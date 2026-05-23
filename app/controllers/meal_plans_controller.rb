@@ -4,9 +4,7 @@ class MealPlansController < ApplicationController
   before_action :set_meal_plan, only: [:edit, :update, :destroy, :move_dish]
 
   def index
-    @meal_plans = current_user.meal_plans.active.today_or_future
-                              .includes(:person_tags, plan_dishes: :dish_ingredients)
-                              .ordered
+    prepare_index_state
   end
 
   def new
@@ -46,6 +44,11 @@ class MealPlansController < ApplicationController
   end
 
   def update
+    if params[:quick_update].present?
+      quick_update
+      return
+    end
+
     @person_tags = current_user.person_tags.order(:name)
     @dish_inputs = normalized_dish_inputs
     @selected_person_tag_ids = selected_person_tag_ids
@@ -80,6 +83,37 @@ class MealPlansController < ApplicationController
 
   private
 
+  def prepare_index_state
+    @meal_plans = current_user.meal_plans.active.today_or_future
+                              .includes(:person_tags, plan_dishes: :dish_ingredients)
+                              .ordered
+    @person_tags = current_user.person_tags.order(:name)
+  end
+
+  def quick_update
+    @selected_person_tag_ids = selected_person_tag_ids
+
+    ActiveRecord::Base.transaction do
+      @meal_plan.person_tag_ids = @selected_person_tag_ids
+      quick_dish_params.each do |dish_id, values|
+        dish = @meal_plan.plan_dishes.find(dish_id)
+        dish.update!(name: values[:name].to_s.strip, memo: values[:memo].to_s.strip)
+      end
+      sync_quick_ingredients!
+    end
+
+    respond_to do |format|
+      format.html { redirect_to meal_plans_path, notice: "献立を更新しました" }
+      format.turbo_stream { render_index_update("献立を更新しました") }
+    end
+  rescue ActiveRecord::RecordInvalid => error
+    merge_nested_errors(error.record)
+    respond_to do |format|
+      format.html { render :edit, status: :unprocessable_content }
+      format.turbo_stream { render_index_update(nil, status: :unprocessable_content) }
+    end
+  end
+
   def set_meal_plan
     @meal_plan = current_user.meal_plans.find(params[:id])
   end
@@ -100,6 +134,54 @@ class MealPlansController < ApplicationController
 
   def selected_person_tag_ids
     current_user.person_tags.where(id: Array(params[:person_tag_ids])).pluck(:id)
+  end
+
+  def quick_dish_params
+    params.fetch(:dishes, ActionController::Parameters.new).permit!.to_h.transform_values do |values|
+      values.symbolize_keys.slice(:name, :memo)
+    end
+  end
+
+  def quick_ingredient_params
+    params.fetch(:ingredients, ActionController::Parameters.new).permit!.to_h.transform_values(&:symbolize_keys)
+  end
+
+  def sync_quick_ingredients!
+    quick_ingredient_params.each_value do |values|
+      if values[:id].present?
+        sync_existing_quick_ingredient!(values)
+      else
+        create_quick_ingredient!(values)
+      end
+    end
+  end
+
+  def sync_existing_quick_ingredient!(values)
+    ingredient = DishIngredient.joins(:plan_dish)
+                               .where(plan_dishes: { meal_plan_id: @meal_plan.id })
+                               .find(values[:id])
+
+    if ActiveModel::Type::Boolean.new.cast(values[:delete])
+      ingredient.destroy!
+      return
+    end
+
+    ingredient.update!(name: values[:name].to_s.strip)
+    ingredient.shopping_items.update_all(name: ingredient.name, updated_at: Time.current)
+  end
+
+  def create_quick_ingredient!(values)
+    name = values[:name].to_s.strip
+    return if name.blank?
+
+    dish = @meal_plan.plan_dishes.find(values[:dish_id])
+    ingredient = dish.dish_ingredients.create!(name: name, add_to_shopping_list: true)
+    current_user.shopping_items.create!(
+      dish_ingredient: ingredient,
+      name: ingredient.name,
+      manual: false,
+      purchased: false
+    )
   end
 
   def default_dish_inputs
@@ -215,5 +297,14 @@ class MealPlansController < ApplicationController
     record.errors.full_messages.each do |message|
       @meal_plan.errors.add(:base, message)
     end
+  end
+
+  def render_index_update(message, status: :ok)
+    flash.now[:notice] = message if message.present?
+    prepare_index_state
+    render turbo_stream: [
+      turbo_stream.update("flash-messages", partial: "shared/flash_messages"),
+      turbo_stream.replace("meal_plans", partial: "meal_plans/list")
+    ], status: status
   end
 end

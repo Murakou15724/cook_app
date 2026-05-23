@@ -1,7 +1,7 @@
 <section class="page-title">
   <p class="eyebrow">今日の予定</p>
   <h1>今日の献立</h1>
-  <p><%= l(@today, format: :long) %></p>
+  <p><%= app_date(@today) %></p>
 </section>
 
 <div class="quick-actions">
@@ -16,7 +16,7 @@
 <section class="today-card">
   <div class="section-title">
     <h2>昼食 / 夕食</h2>
-    <span class="date-badge"><%= @today.strftime("%m/%d") %></span>
+    <span class="date-badge"><%= app_date(@today) %></span>
   </div>
 
   <% ["lunch", "dinner"].each do |meal_type| %>

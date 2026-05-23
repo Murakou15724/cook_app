@@ -6,14 +6,17 @@ class ShoppingItem < ApplicationRecord
 
   before_validation :normalize_name
   before_validation :sync_purchased_at
+  before_validation :assign_sort_order, on: :create
 
   validates :name, presence: true
+  validates :sort_order, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :manual_item_source_consistency
 
   scope :unpurchased, -> { where(purchased: false) }
   scope :purchased, -> { where(purchased: true) }
   scope :manual_items, -> { where(manual: true) }
   scope :meal_plan_items, -> { where(manual: false) }
+  scope :display_ordered, -> { order(:purchased, :sort_order, :created_at, :id) }
 
   private
 
@@ -24,6 +27,12 @@ class ShoppingItem < ApplicationRecord
   def sync_purchased_at
     self.purchased_at = Time.current if purchased? && purchased_at.blank?
     self.purchased_at = nil unless purchased?
+  end
+
+  def assign_sort_order
+    return if sort_order.to_i.positive? || user.blank?
+
+    self.sort_order = user.shopping_items.maximum(:sort_order).to_i + 1000
   end
 
   def manual_item_source_consistency

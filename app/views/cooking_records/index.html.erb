@@ -17,7 +17,7 @@
         <div class="dish-icon"><%= record.eating_out? ? "外" : "食" %></div>
         <div>
           <h3><%= link_to record.name, cooking_record_path(record) %></h3>
-          <p><%= l(record.cooked_on, format: :long) %> / <%= meal_type_label(record.meal_type) %></p>
+          <p><%= app_date(record.cooked_on) %> / <%= meal_type_label(record.meal_type) %></p>
         </div>
       </div>
     <% end %>

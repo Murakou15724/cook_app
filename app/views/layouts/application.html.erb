@@ -26,13 +26,9 @@
         <% end %>
       </header>
 
-      <% if notice.present? %>
-        <p class="flash flash-notice"><%= notice %></p>
-      <% end %>
-
-      <% if alert.present? %>
-        <p class="flash flash-alert"><%= alert %></p>
-      <% end %>
+      <div id="flash-messages" class="flash-stack" aria-live="polite">
+        <%= render "shared/flash_messages" %>
+      </div>
 
       <main class="app-main">
         <%= yield %>

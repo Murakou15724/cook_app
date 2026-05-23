@@ -15,7 +15,7 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: @user.email, password: "password" }
   end
 
-  test "meal plan shopping items are grouped by date meal type and ingredient name" do
+  test "meal plan and manual shopping items are shown together as unpurchased rows" do
     lunch = @user.meal_plans.create!(meal_date: Date.current.tomorrow, meal_type: :lunch)
     curry = lunch.plan_dishes.create!(name: "カレー", position: 0)
     salad = lunch.plan_dishes.create!(name: "サラダ", position: 1)
@@ -34,11 +34,18 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
     get shopping_items_path
 
     assert_response :success
-    assert_select ".summary-card strong", "3"
-    assert_select "h3", { text: "玉ねぎ", count: 1 }
-    assert_select ".count-badge", "2件"
-    assert_select "body", /使用料理: カレー、サラダ/
+    assert_select ".summary-card", 0
+    assert_select ".group-title span", "未購入"
+    assert_select ".group-title span", { text: "献立由来", count: 0 }
+    assert_select ".group-title span", { text: "手動追加", count: 0 }
+    assert_select "h3", { text: "玉ねぎ", count: 2 }
+    assert_select ".count-badge", 0
+    assert_select "body", /昼 カレー/
+    assert_select "body", /昼 サラダ/
     assert_select "h3", "牛乳"
+    assert_select ".shopping-row:not(.purchased) .shopping-delete-form", 0
+    assert_select ".shopping-row:not(.purchased) .shopping-edit-trigger"
+    assert_select ".edit-drawer"
     assert_select "body", { text: /他人の料理/, count: 0 }
     assert_select "body", { text: /数量/, count: 0 }
   end
@@ -55,9 +62,9 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
     assert_nil item.dish_ingredient_id
 
     get shopping_items_path
-    assert_select ".group-title span", "手動追加"
+    assert_select ".group-title span", "未購入"
     assert_select "h3", "牛乳"
-    assert_select "body", /日付・昼夕なし/
+    assert_select "body", /手動追加/
 
     assert_no_difference -> { @user.shopping_items.count } do
       post shopping_items_path, params: { shopping_item: { name: " " } }
@@ -84,7 +91,7 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
     assert_nil item.purchased_at
   end
 
-  test "toggling grouped meal plan item moves all matching items together" do
+  test "toggling meal plan item moves only selected row" do
     plan = @user.meal_plans.create!(meal_date: Date.current.tomorrow, meal_type: :dinner)
     first_dish = plan.plan_dishes.create!(name: "鍋", position: 0)
     second_dish = plan.plan_dishes.create!(name: "副菜", position: 1)
@@ -96,9 +103,42 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
     patch toggle_purchased_shopping_item_path(first_item)
 
     assert first_item.reload.purchased?
-    assert second_item.reload.purchased?
+    assert_not second_item.reload.purchased?
     assert first_item.purchased_at.present?
-    assert second_item.purchased_at.present?
+    assert_nil second_item.purchased_at
+  end
+
+  test "user reorders unpurchased shopping items" do
+    first = @user.shopping_items.create!(name: "牛乳", manual: true, sort_order: 1000)
+    second = @user.shopping_items.create!(name: "卵", manual: true, sort_order: 2000)
+    purchased = @user.shopping_items.create!(name: "パン", manual: true, purchased: true, sort_order: 3000)
+
+    patch reorder_shopping_items_path(format: :json), params: { ids: [second.id, first.id, purchased.id] }, as: :json
+
+    assert_response :success
+    assert_operator second.reload.sort_order, :<, first.reload.sort_order
+    assert_equal 3000, purchased.reload.sort_order
+  end
+
+  test "user updates shopping item name with turbo stream" do
+    item = @user.shopping_items.create!(name: "牛乳", manual: true)
+
+    patch shopping_item_path(item, format: :turbo_stream), params: { shopping_item: { name: " 豆乳 " } }
+
+    assert_response :success
+    assert_equal "豆乳", item.reload.name
+    assert_includes response.media_type, "text/vnd.turbo-stream.html"
+    assert_includes response.body, "買い物項目を更新しました"
+    assert_includes response.body, "豆乳"
+  end
+
+  test "user cannot update another user's shopping item" do
+    other_item = @other_user.shopping_items.create!(name: "他人", manual: true)
+
+    patch shopping_item_path(other_item), params: { shopping_item: { name: "変更" } }
+
+    assert_response :not_found
+    assert_equal "他人", other_item.reload.name
   end
 
   test "user deletes individual and purchased shopping items only in own scope" do

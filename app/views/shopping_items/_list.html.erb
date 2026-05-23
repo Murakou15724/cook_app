@@ -1,0 +1,100 @@
+<%= turbo_frame_tag "shopping_items", data: { controller: "shopping-edit" } do %>
+  <section class="page-title">
+    <p class="eyebrow">Shopping</p>
+    <h1>買い物リスト</h1>
+    <p>必要な食材を確認し、購入済みにします。</p>
+  </section>
+
+  <%= render "shared/error_messages", object: @shopping_item %>
+
+  <section class="card manual-add-card">
+    <div class="section-title compact"><h2>手動追加</h2></div>
+    <%= form_with model: @shopping_item, url: shopping_items_path, class: "compact-add-form", html: { autocomplete: "off" } do |form| %>
+      <div class="form-group">
+        <%= form.label :name, "食材名" %>
+        <%= form.text_field :name, autocomplete: "off" %>
+      </div>
+      <%= form.submit "追加", class: "primary-button" %>
+    <% end %>
+  </section>
+
+  <section class="plan-group">
+    <div class="group-title"><span>未購入</span></div>
+    <% if @unpurchased_items.any? %>
+      <section class="shopping-list-card" data-controller="shopping-sort" data-shopping-sort-url-value="<%= reorder_shopping_items_path(format: :json) %>">
+        <% @unpurchased_items.each do |item| %>
+          <article class="shopping-row" draggable="true" data-shopping-sort-target="item" data-shopping-item-id="<%= item.id %>">
+            <%= form_with url: toggle_purchased_shopping_item_path(item), method: :patch, class: "shopping-check-form" do %>
+              <%= check_box_tag "purchased", "1", false, class: "shopping-check", aria: { label: "#{item.name}を購入済みにする" }, onchange: "this.form.requestSubmit()" %>
+            <% end %>
+
+            <button
+              type="button"
+              class="shopping-row-main shopping-edit-trigger"
+              data-action="click->shopping-edit#open"
+              data-shopping-edit-name-param="<%= item.name %>"
+              data-shopping-edit-context-param="<%= shopping_item_context(item) %>"
+              data-shopping-edit-update-url-param="<%= shopping_item_path(item, format: :turbo_stream) %>"
+              data-shopping-edit-delete-url-param="<%= shopping_item_path(item, format: :turbo_stream) %>">
+              <h3><%= item.name %></h3>
+              <p><%= shopping_item_context(item) %></p>
+            </button>
+
+            <button type="button" class="drag-handle" aria-label="並び替え">↕</button>
+          </article>
+        <% end %>
+      </section>
+    <% else %>
+      <p class="empty-state">未購入の項目はありません。</p>
+    <% end %>
+  </section>
+
+  <section class="plan-group">
+    <div class="group-title">
+      <span>購入済み</span>
+      <% if @purchased_count.positive? %>
+        <%= button_to "購入済みを一括削除", destroy_purchased_shopping_items_path, method: :delete, class: "danger-button compact-danger-button", data: { turbo_confirm: "本当に削除しますか？" } %>
+      <% end %>
+    </div>
+
+    <% if @purchased_items.any? %>
+      <section class="shopping-list-card">
+        <% @purchased_items.each do |item| %>
+          <article class="shopping-row purchased">
+            <%= form_with url: toggle_purchased_shopping_item_path(item), method: :patch, class: "shopping-check-form" do %>
+              <%= check_box_tag "purchased", "0", true, class: "shopping-check", aria: { label: "#{item.name}を未購入に戻す" }, onchange: "this.form.requestSubmit()" %>
+            <% end %>
+
+            <div class="shopping-row-main">
+              <h3><%= item.name %></h3>
+              <p><%= shopping_item_context(item) %></p>
+            </div>
+
+            <%= button_to "削除", shopping_item_path(item), method: :delete, class: "danger-icon-button", form_class: "shopping-delete-form", data: { turbo_confirm: "本当に削除しますか？" } %>
+          </article>
+        <% end %>
+      </section>
+    <% else %>
+      <p class="empty-state">購入済みの項目はありません。</p>
+    <% end %>
+  </section>
+
+  <div class="drawer-backdrop" hidden data-shopping-edit-target="backdrop" data-action="click->shopping-edit#close"></div>
+  <section class="edit-drawer" hidden data-shopping-edit-target="drawer" aria-modal="true" role="dialog" aria-labelledby="shopping-edit-title">
+    <div class="drawer-handle"></div>
+    <div class="drawer-head">
+      <h2 id="shopping-edit-title">食材を編集</h2>
+      <button type="button" class="close-btn" aria-label="閉じる" data-action="shopping-edit#close">×</button>
+    </div>
+
+    <label for="shopping-edit-name">食材名</label>
+    <input id="shopping-edit-name" type="text" data-shopping-edit-target="nameInput" autocomplete="off">
+    <p class="drawer-note" data-shopping-edit-target="context"></p>
+    <p class="drawer-note">保存・削除は非同期で反映されます。</p>
+
+    <div class="drawer-actions">
+      <button type="button" class="save-btn" data-action="shopping-edit#save">保存する</button>
+      <button type="button" class="delete-btn" data-action="shopping-edit#destroy">削除する</button>
+    </div>
+  </section>
+<% end %>

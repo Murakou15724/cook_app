@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_23_020100) do
+ActiveRecord::Schema[7.1].define(version: 2026_05_23_030100) do
   create_table "cooking_record_person_tags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "cooking_record_id", null: false
     t.bigint "person_tag_id", null: false
@@ -125,6 +125,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_23_020100) do
     t.datetime "purchased_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sort_order", default: 0, null: false
     t.index ["created_at"], name: "index_shopping_items_on_created_at"
     t.index ["dish_ingredient_id"], name: "index_shopping_items_on_dish_ingredient_id"
     t.index ["manual"], name: "index_shopping_items_on_manual"
@@ -132,6 +133,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_23_020100) do
     t.index ["purchased"], name: "index_shopping_items_on_purchased"
     t.index ["purchased_at"], name: "index_shopping_items_on_purchased_at"
     t.index ["user_id", "purchased", "manual", "created_at"], name: "idx_on_user_id_purchased_manual_created_at_b305ea790a"
+    t.index ["user_id", "purchased", "sort_order", "created_at"], name: "idx_on_user_id_purchased_sort_order_created_at_45c3b7057f"
     t.index ["user_id"], name: "index_shopping_items_on_user_id"
     t.check_constraint "((`manual` = 1) and (`dish_ingredient_id` is null)) or ((`manual` = 0) and (`dish_ingredient_id` is not null))", name: "chk_shopping_items_manual_source"
     t.check_constraint "((`purchased` = 0) and (`purchased_at` is null)) or ((`purchased` = 1) and (`purchased_at` is not null))", name: "chk_shopping_items_purchased_at"

@@ -39,12 +39,31 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".meal-label", "昼食"
     assert_select ".meal-label", "夕食"
+    assert_select ".summary-card", 0
+    assert_select ".create-button", 0
+    assert_select ".edit-link", 0
+    assert_select ".dish-icon", 0
     assert_select "h3", /カレー/
     assert_select "h3", /サラダ/
     assert_select "h3", /焼き魚/
     assert_select "body", { text: /昨日の料理/, count: 0 }
     assert_select "body", { text: /他人の料理/, count: 0 }
     assert_select "body", { text: /朝食/, count: 0 }
+  end
+
+  test "index shows person tags next to meal type and quick edit drawer" do
+    tag = @user.person_tags.create!(name: "家族")
+    meal_plan = @user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
+    meal_plan.person_tags << tag
+    meal_plan.plan_dishes.create!(name: "カレー", memo: "甘口", position: 0)
+
+    get meal_plans_path
+
+    assert_response :success
+    assert_select ".meal-tag-line", "家族"
+    assert_select ".meal-edit-trigger h3", "カレー"
+    assert_select ".meal-edit-trigger p", /甘口/
+    assert_select ".edit-drawer"
   end
 
   test "user creates a meal plan with multiple dishes ingredients person tags and shopping items" do
@@ -179,6 +198,68 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_equal ["友人"], meal_plan.person_tags.pluck(:name)
     assert_equal ["じゃがいも", "レタス"].sort, @user.shopping_items.pluck(:name).sort
     assert_equal ["じゃがいも", "牛乳", "レタス"].sort, DishIngredient.joins(:plan_dish).where(plan_dishes: { meal_plan_id: meal_plan.id }).pluck(:name).sort
+  end
+
+  test "user quick updates meal plan dishes and person tags with turbo stream" do
+    old_tag = @user.person_tags.create!(name: "家族")
+    new_tag = @user.person_tags.create!(name: "友人")
+    meal_plan = @user.meal_plans.create!(meal_date: Date.current.tomorrow, meal_type: :lunch)
+    meal_plan.person_tags << old_tag
+    dish = meal_plan.plan_dishes.create!(name: "カレー", memo: "甘口", position: 0)
+
+    patch meal_plan_path(meal_plan, format: :turbo_stream), params: {
+      quick_update: "1",
+      person_tag_ids: [new_tag.id],
+      dishes: {
+        dish.id.to_s => { name: "シチュー", memo: "牛乳多め" }
+      }
+    }
+
+    assert_response :success
+    assert_equal "シチュー", dish.reload.name
+    assert_equal "牛乳多め", dish.memo
+    assert_equal ["友人"], meal_plan.reload.person_tags.pluck(:name)
+    assert_includes response.body, "献立を更新しました"
+    assert_includes response.body, "シチュー"
+  end
+
+  test "quick update edits deletes and adds ingredients with scoped shopping items" do
+    meal_plan = @user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
+    dish = meal_plan.plan_dishes.create!(name: "カレー", memo: "甘口", position: 0)
+    onion = dish.dish_ingredients.create!(name: "たまねぎ", add_to_shopping_list: true)
+    carrot = dish.dish_ingredients.create!(name: "にんじん", add_to_shopping_list: true)
+    onion_item = @user.shopping_items.create!(dish_ingredient: onion, name: "たまねぎ", manual: false)
+    carrot_item = @user.shopping_items.create!(dish_ingredient: carrot, name: "にんじん", manual: false)
+
+    other_plan = @user.meal_plans.create!(meal_date: Date.current.tomorrow, meal_type: :dinner)
+    other_dish = other_plan.plan_dishes.create!(name: "別メニュー", position: 0)
+    other_onion = other_dish.dish_ingredients.create!(name: "たまねぎ", add_to_shopping_list: true)
+    other_onion_item = @user.shopping_items.create!(dish_ingredient: other_onion, name: "たまねぎ", manual: false)
+
+    assert_difference -> { dish.dish_ingredients.count }, 0 do
+      assert_difference -> { @user.shopping_items.count }, 0 do
+        patch meal_plan_path(meal_plan, format: :turbo_stream), params: {
+          quick_update: "1",
+          dishes: {
+            dish.id.to_s => { name: "カレー", memo: "甘口" }
+          },
+          ingredients: {
+            "existing_#{onion.id}" => { id: onion.id, name: "玉ねぎ", delete: "0" },
+            "existing_#{carrot.id}" => { id: carrot.id, name: "にんじん", delete: "1" },
+            "new_1" => { dish_id: dish.id, name: "じゃがいも" }
+          }
+        }
+      end
+    end
+
+    assert_response :success
+    assert_equal "玉ねぎ", onion.reload.name
+    assert_equal "玉ねぎ", onion_item.reload.name
+    assert_not DishIngredient.exists?(carrot.id)
+    assert_not ShoppingItem.exists?(carrot_item.id)
+    assert_equal "たまねぎ", other_onion.reload.name
+    assert_equal "たまねぎ", other_onion_item.reload.name
+    assert @user.shopping_items.exists?(dish_ingredient: dish.dish_ingredients.find_by!(name: "じゃがいも"))
   end
 
   test "invalid update does not leave partial related data" do
