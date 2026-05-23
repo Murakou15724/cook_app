@@ -45,9 +45,16 @@ module ApplicationHelper
         <path d="M11.2 12h3.2"/>
         <path d="M6 16.6a2.2 2.2 0 0 1 2.2-2.2H18"/>
       SVG
-      tag: <<~SVG
-        <path d="M5.5 6.3v5.4l7.2 7.2a1.8 1.8 0 0 0 2.5 0l3.7-3.7a1.8 1.8 0 0 0 0-2.5L11.7 5.5H6.3a.8.8 0 0 0-.8.8Z"/>
-        <circle cx="9" cy="9" r="1.1"/>
+      settings: <<~SVG
+        <circle cx="12" cy="12" r="2.3"/>
+        <path d="M12 4.8v2.1"/>
+        <path d="M12 17.1v2.1"/>
+        <path d="m6.9 6.9 1.5 1.5"/>
+        <path d="m15.6 15.6 1.5 1.5"/>
+        <path d="M4.8 12h2.1"/>
+        <path d="M17.1 12h2.1"/>
+        <path d="m6.9 17.1 1.5-1.5"/>
+        <path d="m15.6 8.4 1.5-1.5"/>
       SVG
     }
 

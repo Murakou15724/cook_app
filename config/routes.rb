@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   delete "logout", to: "sessions#destroy", as: :logout
 
   resource :profile, only: [:edit, :update]
+  get "settings", to: "settings#show", as: :settings
   get "dev/pages", to: "dev_pages#index", as: :dev_pages
 
   # 一般ユーザー主要画面

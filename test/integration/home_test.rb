@@ -18,7 +18,8 @@ class HomeTest < ActionDispatch::IntegrationTest
     tag = @user.person_tags.create!(name: "家族")
     lunch = @user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
     lunch.person_tags << tag
-    lunch.plan_dishes.create!(name: "カレー", memo: "甘口", position: 0)
+    curry = lunch.plan_dishes.create!(name: "カレー", memo: "甘口", position: 0)
+    curry.dish_ingredients.create!(name: "玉ねぎ")
     @user.meal_plans.create!(meal_date: Date.current, meal_type: :dinner)
          .plan_dishes.create!(name: "焼き魚", position: 0)
     @other_user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
@@ -28,11 +29,17 @@ class HomeTest < ActionDispatch::IntegrationTest
     follow_redirect!
 
     assert_response :success
-    assert_select "h2", "昼食"
-    assert_select "h2", "夕食"
+    assert_select ".section-title h2", ApplicationController.helpers.app_date(Date.current)
+    assert_select ".meal-label", "昼食"
+    assert_select ".meal-label", "夕食"
+    assert_select ".meal-tag-line", "家族"
     assert_select "h3", /カレー/
     assert_select "h3", /焼き魚/
-    assert_select "span", "家族"
+    assert_select ".meal-dish-detail", /玉ねぎ/
+    assert_select ".meal-dish-detail", /甘口/
+    assert_select ".quick-actions a", "献立を作成"
+    assert_select ".quick-actions a", { text: "買い物リスト", count: 0 }
+    assert_select ".quick-actions a", { text: "プロフィール", count: 0 }
     assert_select "body", { text: /他人の料理/, count: 0 }
   end
 
@@ -40,8 +47,9 @@ class HomeTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: @user.email, password: "password" }
     follow_redirect!
 
-    assert_select ".empty-state", /まだ昼食の献立はありません/
-    assert_select ".empty-state", /まだ夕食の献立はありません/
+    assert_select ".meal-label", "昼食"
+    assert_select ".meal-label", "夕食"
+    assert_select ".empty-state", "未登録", count: 2
   end
 
   test "shows admin entry only for admin users" do

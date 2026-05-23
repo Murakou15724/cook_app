@@ -41,7 +41,7 @@
           <%= bottom_nav_link("作成", new_meal_plan_path, :plus, active: controller_name == "meal_plans" && (action_name == "new" || action_name == "create")) %>
           <%= bottom_nav_link("買い物", shopping_items_path, :basket, active: controller_name == "shopping_items") %>
           <%= bottom_nav_link("履歴", cooking_records_path, :diary, active: controller_name == "cooking_records") %>
-          <%= bottom_nav_link("タグ", person_tags_path, :tag, active: controller_name == "person_tags") %>
+          <%= bottom_nav_link("設定", settings_path, :settings, active: controller_name == "settings") %>
         </nav>
       <% end %>
     </div>

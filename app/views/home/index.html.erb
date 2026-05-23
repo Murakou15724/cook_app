@@ -6,53 +6,52 @@
 
 <div class="quick-actions">
   <%= link_to "献立を作成", new_meal_plan_path, class: "primary-button" %>
-  <%= link_to "買い物リスト", shopping_items_path, class: "secondary-button" %>
-  <%= link_to "プロフィール", edit_profile_path, class: "secondary-button" %>
   <% if current_user.admin? %>
     <%= link_to "管理者ホーム", admin_root_path, class: "admin-chip" %>
   <% end %>
 </div>
 
-<section class="today-card">
+<section class="card">
   <div class="section-title">
-    <h2>昼食 / 夕食</h2>
-    <span class="date-badge"><%= app_date(@today) %></span>
+    <h2><%= app_date(@today) %></h2>
   </div>
 
   <% ["lunch", "dinner"].each do |meal_type| %>
     <% meal_plan = @meal_plans[meal_type] %>
     <div class="meal-block">
       <div class="meal-head">
-        <h2 class="meal-label"><%= meal_type_label(meal_type) %></h2>
-        <% if meal_plan.present? %>
-          <%= link_to "編集", edit_meal_plan_path(meal_plan), class: "edit-link" %>
-        <% else %>
-          <%= link_to "追加", new_meal_plan_path, class: "edit-link" %>
-        <% end %>
+        <div class="meal-head-main">
+          <span class="meal-label"><%= meal_type_label(meal_type) %></span>
+          <% if meal_plan&.person_tags&.any? %>
+            <span class="meal-tag-line"><%= meal_plan.person_tags.map(&:name).join("、") %></span>
+          <% end %>
+        </div>
       </div>
 
       <% if meal_plan.present? %>
-        <% if meal_plan.person_tags.any? %>
-          <p class="tag-list">
-            <% meal_plan.person_tags.each do |tag| %>
-              <span><%= tag.name %></span>
-            <% end %>
-          </p>
-        <% end %>
-
         <% meal_plan.plan_dishes.ordered.each do |dish| %>
           <article class="dish">
             <div class="dish-icon"><%= dish.eating_out? ? "外" : "食" %></div>
             <div>
               <h3><%= dish.name %><%= "（外食）" if dish.eating_out? %></h3>
+              <% ingredients = dish.dish_ingredients.sort_by(&:id).map(&:name).reject(&:blank?) %>
+              <% if ingredients.any? %>
+                <p class="meal-dish-detail">
+                  <span>食材</span>
+                  <%= ingredients.join("、") %>
+                </p>
+              <% end %>
               <% if dish.memo.present? %>
-                <p><%= simple_format(dish.memo) %></p>
+                <p class="meal-dish-detail">
+                  <span>メモ</span>
+                  <%= dish.memo %>
+                </p>
               <% end %>
             </div>
           </article>
         <% end %>
       <% else %>
-        <p class="empty-state">まだ<%= meal_type_label(meal_type) %>の献立はありません。</p>
+        <p class="empty-state">未登録</p>
       <% end %>
     </div>
   <% end %>
