@@ -5,7 +5,7 @@ export default class extends Controller {
 
   open(event) {
     const trigger = event.currentTarget
-    const template = trigger.parentElement.querySelector("[data-meal-plan-edit-target='template']")
+    const template = trigger.nextElementSibling
     if (!template) return
 
     this.bodyTarget.innerHTML = template.innerHTML

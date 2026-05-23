@@ -55,7 +55,8 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     tag = @user.person_tags.create!(name: "家族")
     meal_plan = @user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
     meal_plan.person_tags << tag
-    meal_plan.plan_dishes.create!(name: "カレー", memo: "甘口", position: 0)
+    curry = meal_plan.plan_dishes.create!(name: "カレー", memo: "甘口", position: 0)
+    salad = meal_plan.plan_dishes.create!(name: "サラダ", memo: "別枠", position: 1)
 
     get meal_plans_path
 
@@ -64,6 +65,14 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_select ".meal-edit-trigger h3", "カレー"
     assert_select ".meal-edit-trigger p", /甘口/
     assert_select ".edit-drawer"
+
+    document = Nokogiri::HTML(response.body)
+    curry_template = document.at_css("template[data-dish-id='#{curry.id}']").inner_html
+    assert_includes curry_template, "dishes[#{curry.id}][name]"
+    assert_includes curry_template, "献立名"
+    assert_includes curry_template, "食材"
+    assert_includes curry_template, "メモ"
+    assert_not_includes curry_template, "dishes[#{salad.id}][name]"
   end
 
   test "user creates a meal plan with multiple dishes ingredients person tags and shopping items" do

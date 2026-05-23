@@ -580,8 +580,6 @@ select:focus {
 }
 
 .drawer-dish-fields {
-  display: grid;
-  gap: 6px;
   padding-top: 8px;
   border-top: 1px solid var(--line);
 }
@@ -625,10 +623,8 @@ select:focus {
 }
 
 .drawer-ingredient-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px;
-  align-items: center;
-  gap: 6px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  margin-bottom: 0;
 }
 
 .dish:first-child,
@@ -940,12 +936,22 @@ select:focus {
   left: 50%;
   bottom: 0;
   z-index: 1101;
+  display: flex;
+  flex-direction: column;
   width: min(100%, 430px);
+  max-height: calc(100dvh - 24px);
   padding: 18px 18px 22px;
   border-radius: 28px 28px 0 0;
   background: #fffdf9;
   box-shadow: 0 -12px 32px rgba(71, 51, 34, 0.18);
   transform: translateX(-50%);
+}
+
+.drawer-scroll-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .drawer-handle {
