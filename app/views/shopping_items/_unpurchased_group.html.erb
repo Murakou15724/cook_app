@@ -1,0 +1,30 @@
+<section id="shopping_unpurchased_group" class="plan-group">
+  <div class="group-title"><span>未購入</span></div>
+  <% if @unpurchased_items.any? %>
+    <section class="shopping-list-card" data-controller="shopping-sort" data-shopping-sort-url-value="<%= reorder_shopping_items_path(format: :json) %>">
+      <% @unpurchased_items.each do |item| %>
+        <article class="shopping-row" draggable="true" data-shopping-sort-target="item" data-shopping-item-id="<%= item.id %>">
+          <%= form_with url: toggle_purchased_shopping_item_path(item), method: :patch, class: "shopping-check-form" do %>
+            <%= check_box_tag "purchased", "1", false, class: "shopping-check", aria: { label: "#{item.name}を購入済みにする" }, onchange: "this.form.requestSubmit()" %>
+          <% end %>
+
+          <button
+            type="button"
+            class="shopping-row-main shopping-edit-trigger"
+            data-action="click->shopping-edit#open"
+            data-shopping-edit-name-param="<%= item.name %>"
+            data-shopping-edit-context-param="<%= shopping_item_context(item) %>"
+            data-shopping-edit-update-url-param="<%= shopping_item_path(item, format: :turbo_stream) %>"
+            data-shopping-edit-delete-url-param="<%= shopping_item_path(item, format: :turbo_stream) %>">
+            <h3><%= item.name %></h3>
+            <p><%= shopping_item_context(item) %></p>
+          </button>
+
+          <button type="button" class="drag-handle" aria-label="並び替え">↕</button>
+        </article>
+      <% end %>
+    </section>
+  <% else %>
+    <p class="empty-state">未購入の項目はありません。</p>
+  <% end %>
+</section>

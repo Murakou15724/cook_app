@@ -4,15 +4,15 @@ class CookingRecordMigrationTest < ActionDispatch::IntegrationTest
   setup do
     @user = User.create!(
       email: "migration@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
     @other_user = User.create!(
       email: "other-migration@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
-    post login_path, params: { email: @user.email, password: "password" }
+    post login_path, params: { email: @user.email, password: "password1" }
   end
 
   test "past meal plans migrate to cooking records and today meal plans do not" do

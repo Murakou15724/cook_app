@@ -10,7 +10,7 @@
   <div class="meal-plan-basic-fields">
     <div class="form-group">
       <%= form.label :meal_date, "日付" %>
-      <%= form.date_field :meal_date, value: @meal_plan.meal_date || Date.current, autocomplete: "off" %>
+      <%= form.date_field :meal_date, value: @meal_plan.meal_date || Date.current, min: Date.current, autocomplete: "off" %>
     </div>
 
     <div class="form-group">
@@ -44,6 +44,7 @@
                 <button type="button" class="danger-icon-button" aria-label="食材を削除" data-action="meal-plan-form#removeIngredient">-</button>
                 <%= text_field_tag "dishes[#{index}][ingredients][#{ingredient_index}][name]", ingredient["name"], id: "dishes_#{index}_ingredients_#{ingredient_index}_name", autocomplete: "off", data: { action: "input->meal-plan-form#syncIngredientCheck" } %>
                 <label class="inline-check">
+                  <%= hidden_field_tag "dishes[#{index}][ingredients][#{ingredient_index}][add_to_shopping_list]", "0" %>
                   <%= check_box_tag "dishes[#{index}][ingredients][#{ingredient_index}][add_to_shopping_list]", "1", ingredient["name"].present? ? ingredient["add_to_shopping_list"] != false && ingredient["add_to_shopping_list"] != "0" : false, aria: { label: "買い物リストに追加" }, data: { action: "change->meal-plan-form#preventEmptyIngredientCheck" } %>
                 </label>
               </div>
@@ -82,6 +83,7 @@
               <button type="button" class="danger-icon-button" aria-label="食材を削除" data-action="meal-plan-form#removeIngredient">-</button>
               <input type="text" name="dishes[__DISH_INDEX__][ingredients][<%= ingredient_index %>][name]" id="dishes___DISH_INDEX___ingredients_<%= ingredient_index %>_name" autocomplete="off" data-action="input->meal-plan-form#syncIngredientCheck">
               <label class="inline-check">
+                <input type="hidden" name="dishes[__DISH_INDEX__][ingredients][<%= ingredient_index %>][add_to_shopping_list]" value="0">
                 <input type="checkbox" name="dishes[__DISH_INDEX__][ingredients][<%= ingredient_index %>][add_to_shopping_list]" value="1" aria-label="買い物リストに追加" data-action="change->meal-plan-form#preventEmptyIngredientCheck">
               </label>
             </div>
@@ -101,6 +103,7 @@
       <button type="button" class="danger-icon-button" aria-label="食材を削除" data-action="meal-plan-form#removeIngredient">-</button>
       <input type="text" name="dishes[__DISH_INDEX__][ingredients][__INGREDIENT_INDEX__][name]" id="dishes___DISH_INDEX___ingredients___INGREDIENT_INDEX___name" autocomplete="off" data-action="input->meal-plan-form#syncIngredientCheck">
       <label class="inline-check">
+        <input type="hidden" name="dishes[__DISH_INDEX__][ingredients][__INGREDIENT_INDEX__][add_to_shopping_list]" value="0">
         <input type="checkbox" name="dishes[__DISH_INDEX__][ingredients][__INGREDIENT_INDEX__][add_to_shopping_list]" value="1" aria-label="買い物リストに追加" data-action="change->meal-plan-form#preventEmptyIngredientCheck">
       </label>
     </div>

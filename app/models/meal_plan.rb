@@ -21,4 +21,5 @@ class MealPlan < ApplicationRecord
     errors.add(:migrated_at, "を設定してください") if migrated? && migrated_at.blank?
     errors.add(:migrated_at, "は移行済みの場合のみ設定できます") if !migrated? && migrated_at.present?
   end
+
 end

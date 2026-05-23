@@ -4,8 +4,8 @@ class PersonTagTest < ActiveSupport::TestCase
   setup do
     @user = User.create!(
       email: "tag-owner@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
   end
 
@@ -22,8 +22,8 @@ class PersonTagTest < ActiveSupport::TestCase
     duplicate = @user.person_tags.new(name: "家族")
     other_user = User.create!(
       email: "other-tag-owner@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
     other_tag = other_user.person_tags.new(name: "家族")
 

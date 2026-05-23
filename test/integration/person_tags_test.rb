@@ -4,15 +4,15 @@ class PersonTagsTest < ActionDispatch::IntegrationTest
   setup do
     @user = User.create!(
       email: "person-tags@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
     @other_user = User.create!(
       email: "other-person-tags@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
-    post login_path, params: { email: @user.email, password: "password" }
+    post login_path, params: { email: @user.email, password: "password1" }
   end
 
   test "user creates edits and deletes a person tag" do

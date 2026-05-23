@@ -19,6 +19,13 @@ class MealPlansController < ApplicationController
     @dish_inputs = normalized_dish_inputs
     @selected_person_tag_ids = selected_person_tag_ids
 
+    if past_meal_date?(@meal_plan.meal_date)
+      @meal_plan.valid?
+      @meal_plan.errors.add(:meal_date, "は今日以降を指定してください")
+      render :new, status: :unprocessable_content
+      return
+    end
+
     if @dish_inputs.empty?
       @dish_inputs = default_dish_inputs
       @meal_plan.valid?
@@ -130,6 +137,10 @@ class MealPlansController < ApplicationController
     return meal_type if MealPlan.meal_types.key?(meal_type)
 
     nil
+  end
+
+  def past_meal_date?(meal_date)
+    meal_date.present? && meal_date < Date.current
   end
 
   def selected_person_tag_ids

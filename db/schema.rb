@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_23_040100) do
+ActiveRecord::Schema[7.1].define(version: 2026_05_24_010200) do
   create_table "cooking_record_person_tags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "cooking_record_id", null: false
     t.bigint "person_tag_id", null: false
@@ -146,8 +146,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_23_040100) do
     t.integer "role", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "nickname"
     t.index ["created_at"], name: "index_users_on_created_at"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["nickname"], name: "index_users_on_nickname"
     t.index ["role"], name: "index_users_on_role"
     t.check_constraint "`role` in (0,1)", name: "chk_users_role"
   end

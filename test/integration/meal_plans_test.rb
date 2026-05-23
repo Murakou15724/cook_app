@@ -4,15 +4,15 @@ class MealPlansTest < ActionDispatch::IntegrationTest
   setup do
     @user = User.create!(
       email: "meal-plans@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
     @other_user = User.create!(
       email: "other-meal-plans@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
-    post login_path, params: { email: @user.email, password: "password" }
+    post login_path, params: { email: @user.email, password: "password1" }
   end
 
   test "index shows active today and future plans by date with lunch and dinner frames" do
@@ -125,20 +125,41 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_equal ["にんじん", "レタス", "玉ねぎ"].sort, @user.shopping_items.pluck(:name).sort
   end
 
+  test "user cannot create a meal plan in the past" do
+    assert_no_difference -> { @user.meal_plans.count } do
+      post meal_plans_path, params: meal_plan_params(
+        meal_date: Date.current.yesterday,
+        meal_type: "lunch",
+        dishes: {
+          "0" => {
+            name: "昨日の献立",
+            memo: "",
+            ingredients: {
+              "0" => { name: "玉ねぎ", add_to_shopping_list: "1" }
+            }
+          }
+        }
+      )
+    end
+
+    assert_response :unprocessable_content
+    assert_select ".error-panel", /日付は今日以降を指定してください/
+  end
+
   test "new meal plan form starts with one dish and three ingredient fields" do
     get new_meal_plan_path
 
     assert_response :success
     assert_select "form[autocomplete='off'][data-controller='meal-plan-form']"
     assert_select "section.dish-card[data-dish-index='0']", 1
-    assert_select "input[name='meal_date'][autocomplete='off']", 1
+    assert_select "input[name='meal_date'][autocomplete='off'][min='#{Date.current}']", 1
     assert_select "input[name='dishes[0][name]'][autocomplete='off']", 1
     assert_select "input[name='dishes[1][name]']", 0
     assert_select "input[name='dishes[0][ingredients][0][name]'][autocomplete='off']", 1
     assert_select "input[name='dishes[0][ingredients][1][name]'][autocomplete='off']", 1
     assert_select "input[name='dishes[0][ingredients][2][name]'][autocomplete='off']", 1
     assert_select "textarea[name='dishes[0][memo]'][autocomplete='off']", 1
-    assert_select "input[name='dishes[0][ingredients][0][add_to_shopping_list]']", 1
+    assert_select "input[name='dishes[0][ingredients][0][add_to_shopping_list]']", 2
     assert_select "button", "料理を追加"
     assert_select "button", "食材を追加"
     assert_select ".ingredient-shopping-heading", "買い物"
@@ -163,7 +184,7 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_select "input[name='dishes[0][name]'][value='カレー']"
     assert_select "textarea[name='dishes[0][memo]']", /甘口/
     assert_select "input[name='dishes[0][ingredients][0][name]'][value='玉ねぎ']"
-    assert_select "input[name='dishes[0][ingredients][0][add_to_shopping_list]'][checked='checked']"
+    assert_select "input[name='dishes[0][ingredients][0][add_to_shopping_list]'][checked='checked']", 1
     assert_select "input[name='dishes[0][ingredients][1][name]'][value='予約']"
     assert_select "input[name='dishes[0][ingredients][1][add_to_shopping_list]'][checked='checked']", count: 0
     assert_select "input[name='person_tag_ids[]'][value='#{tag.id}'][checked='checked']"

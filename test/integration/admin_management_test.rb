@@ -4,14 +4,15 @@ class AdminManagementTest < ActionDispatch::IntegrationTest
   setup do
     @admin = User.create!(
       email: "admin-management@example.com",
-      password: "password",
-      password_confirmation: "password",
+      password: "password1",
+      password_confirmation: "password1",
       role: :admin
     )
     @user = User.create!(
       email: "member-management@example.com",
-      password: "password",
-      password_confirmation: "password"
+      nickname: "管理対象",
+      password: "password1",
+      password_confirmation: "password1"
     )
   end
 
@@ -26,35 +27,71 @@ class AdminManagementTest < ActionDispatch::IntegrationTest
            params: {
              user: {
                email: "created-admin@example.com",
-               password: "password",
-               password_confirmation: "password"
+               nickname: "登録管理者",
+               password: "password1",
+               password_confirmation: "password1"
              }
            }
     end
 
     assert_redirected_to admin_root_path
+    assert_equal "登録管理者", User.find_by!(email: "created-admin@example.com").nickname
   end
 
   test "admin user page links to read only user scoped lists" do
-    post login_path, params: { email: @admin.email, password: "password" }
+    post login_path, params: { email: @admin.email, password: "password1" }
 
     get admin_users_path
 
     assert_response :success
     assert_select "a[href='#{admin_user_path(@user)}']", @user.id.to_s
+    assert_select "body", /管理対象/
+    assert_select "a[href='/admin/users/#{@user.id}/edit']", 0
+    assert_select "form[action='#{admin_user_path(@user)}'][method='post']", 1
 
     get admin_user_path(@user)
 
     assert_response :success
+    assert_select "body", /管理対象/
     assert_select "body", @user.email
     assert_select "body", /password_digest/
+    assert_select "a[href='#{admin_users_path}']", "ユーザー管理へ戻る"
     assert_select "a[href='#{shopping_items_admin_user_path(@user)}']"
     assert_select "a[href='#{meal_plans_admin_user_path(@user)}']"
     assert_select "a[href='#{cooking_records_admin_user_path(@user)}']"
+
+    get meal_plans_admin_user_path(@user)
+    assert_response :success
+    assert_select "body", /管理対象/
+    assert_select "a[href='#{admin_user_path(@user)}']", "ユーザー詳細に戻る"
+
+    get shopping_items_admin_user_path(@user)
+    assert_response :success
+    assert_select "body", /管理対象/
+    assert_select "a[href='#{admin_user_path(@user)}']", "ユーザー詳細に戻る"
+
+    get cooking_records_admin_user_path(@user)
+    assert_response :success
+    assert_select "body", /管理対象/
+    assert_select "a[href='#{admin_user_path(@user)}']", "ユーザー詳細に戻る"
+  end
+
+  test "admin cannot edit users but can delete users" do
+    post login_path, params: { email: @admin.email, password: "password1" }
+
+    assert_raises(ActionController::RoutingError) do
+      get "/admin/users/#{@user.id}/edit"
+    end
+
+    assert_difference -> { User.count }, -1 do
+      delete admin_user_path(@user)
+    end
+
+    assert_redirected_to admin_users_path
   end
 
   test "admin can search user scoped lists without edit links" do
-    post login_path, params: { email: @admin.email, password: "password" }
+    post login_path, params: { email: @admin.email, password: "password1" }
     @user.cooking_records.create!(
       name: "駅前レストラン",
       cooked_on: Date.current.yesterday,
@@ -65,6 +102,7 @@ class AdminManagementTest < ActionDispatch::IntegrationTest
     get cooking_records_admin_user_path(@user), params: { q: "レスト" }
 
     assert_response :success
+    assert_select "a[href='#{admin_user_path(@user)}']", "ユーザー詳細に戻る"
     assert_select "h3", /駅前レストラン/
     assert_select "a", { text: /編集|削除/, count: 0 }
     assert_select "form[action*='/admin/cooking_records/']", 0

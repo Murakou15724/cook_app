@@ -1,0 +1,29 @@
+<section id="shopping_purchased_group" class="plan-group">
+  <div class="group-title">
+    <span>購入済み</span>
+    <% if @purchased_count.positive? %>
+      <%= button_to "購入済みを一括削除", destroy_purchased_shopping_items_path, method: :delete, class: "danger-button compact-danger-button", data: { turbo_confirm: "本当に削除しますか？" } %>
+    <% end %>
+  </div>
+
+  <% if @purchased_items.any? %>
+    <section class="shopping-list-card">
+      <% @purchased_items.each do |item| %>
+        <article class="shopping-row purchased">
+          <%= form_with url: toggle_purchased_shopping_item_path(item), method: :patch, class: "shopping-check-form" do %>
+            <%= check_box_tag "purchased", "0", true, class: "shopping-check", aria: { label: "#{item.name}を未購入に戻す" }, onchange: "this.form.requestSubmit()" %>
+          <% end %>
+
+          <div class="shopping-row-main">
+            <h3><%= item.name %></h3>
+            <p><%= shopping_item_context(item) %></p>
+          </div>
+
+          <%= button_to "削除", shopping_item_path(item), method: :delete, class: "danger-icon-button", form_class: "shopping-delete-form", data: { turbo_confirm: "本当に削除しますか？" } %>
+        </article>
+      <% end %>
+    </section>
+  <% else %>
+    <p class="empty-state">購入済みの項目はありません。</p>
+  <% end %>
+</section>

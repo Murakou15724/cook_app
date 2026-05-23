@@ -44,7 +44,7 @@ Rails.application.routes.draw do
     get "signup", to: "registrations#new", as: :signup
     post "signup", to: "registrations#create"
 
-    resources :users, only: [:index, :show, :edit, :update, :destroy] do
+    resources :users, only: [:index, :show, :destroy] do
       member do
         get :meal_plans
         get :shopping_items

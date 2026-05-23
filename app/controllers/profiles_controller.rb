@@ -7,10 +7,12 @@ class ProfilesController < ApplicationController
 
   def update
     @user = current_user
-    attrs = profile_params.to_h.compact_blank
+    attrs = profile_params.to_h
+    attrs.delete("password") if attrs["password"].blank?
+    attrs.delete("password_confirmation") if attrs["password_confirmation"].blank?
 
     if @user.update(attrs)
-      redirect_to edit_profile_path, notice: "プロフィールを更新しました"
+      redirect_to root_path, notice: "プロフィールを更新しました"
     else
       render :edit, status: :unprocessable_content
     end
@@ -19,6 +21,6 @@ class ProfilesController < ApplicationController
   private
 
   def profile_params
-    params.require(:user).permit(:email, :password, :password_confirmation)
+    params.require(:user).permit(:email, :nickname, :password, :password_confirmation)
   end
 end

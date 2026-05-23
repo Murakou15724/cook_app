@@ -4,15 +4,15 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
   setup do
     @user = User.create!(
       email: "shopping@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
     @other_user = User.create!(
       email: "other-shopping@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
-    post login_path, params: { email: @user.email, password: "password" }
+    post login_path, params: { email: @user.email, password: "password1" }
   end
 
   test "meal plan and manual shopping items are shown together as unpurchased rows" do
@@ -76,19 +76,25 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
   test "user toggles purchased state for manual item" do
     item = @user.shopping_items.create!(name: "牛乳", manual: true, purchased: false)
 
-    patch toggle_purchased_shopping_item_path(item)
-    assert_redirected_to shopping_items_path
+    patch toggle_purchased_shopping_item_path(item, format: :turbo_stream)
+    assert_response :success
     assert item.reload.purchased?
     assert item.purchased_at.present?
+    assert_includes response.body, "shopping_unpurchased_group"
+    assert_includes response.body, "shopping_purchased_group"
+    assert_not_includes response.body, "購入済みにしました"
 
     get shopping_items_path
     assert_select ".group-title span", "購入済み"
     assert_select "h3", "牛乳"
 
-    patch toggle_purchased_shopping_item_path(item)
-    assert_redirected_to shopping_items_path
+    patch toggle_purchased_shopping_item_path(item, format: :turbo_stream)
+    assert_response :success
     assert_not item.reload.purchased?
     assert_nil item.purchased_at
+    assert_includes response.body, "shopping_unpurchased_group"
+    assert_includes response.body, "shopping_purchased_group"
+    assert_not_includes response.body, "未購入に戻しました"
   end
 
   test "toggling meal plan item moves only selected row" do

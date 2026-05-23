@@ -4,13 +4,13 @@ class HomeTest < ActionDispatch::IntegrationTest
   setup do
     @user = User.create!(
       email: "home@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
     @other_user = User.create!(
       email: "other@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
   end
 
@@ -26,7 +26,7 @@ class HomeTest < ActionDispatch::IntegrationTest
     @other_user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
                .plan_dishes.create!(name: "他人の料理", position: 0)
 
-    post login_path, params: { email: @user.email, password: "password" }
+    post login_path, params: { email: @user.email, password: "password1" }
     follow_redirect!
 
     assert_response :success
@@ -46,7 +46,7 @@ class HomeTest < ActionDispatch::IntegrationTest
   end
 
   test "shows empty state when today's plans are missing" do
-    post login_path, params: { email: @user.email, password: "password" }
+    post login_path, params: { email: @user.email, password: "password1" }
     follow_redirect!
 
     assert_select ".meal-label", "昼食"
@@ -55,18 +55,18 @@ class HomeTest < ActionDispatch::IntegrationTest
   end
 
   test "shows admin entry only for admin users" do
-    post login_path, params: { email: @user.email, password: "password" }
+    post login_path, params: { email: @user.email, password: "password1" }
     follow_redirect!
     assert_select ".admin-chip", { count: 0 }
 
     delete logout_path
     admin = User.create!(
       email: "admin-home@example.com",
-      password: "password",
-      password_confirmation: "password",
+      password: "password1",
+      password_confirmation: "password1",
       role: :admin
     )
-    post login_path, params: { email: admin.email, password: "password" }
+    post login_path, params: { email: admin.email, password: "password1" }
     follow_redirect!
 
     assert_select ".header .admin-chip", "管理者ホーム"

@@ -4,8 +4,8 @@ class MealPlanTest < ActiveSupport::TestCase
   setup do
     @user = User.create!(
       email: "meal@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
   end
 

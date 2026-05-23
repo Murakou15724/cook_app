@@ -59,8 +59,8 @@ class ShoppingItemsController < ApplicationController
     items.each { |item| item.update!(purchased: next_state) }
 
     respond_to do |format|
-      format.html { redirect_to shopping_items_path, notice: next_state ? "購入済みにしました" : "未購入に戻しました" }
-      format.turbo_stream { render_list_update(next_state ? "購入済みにしました" : "未購入に戻しました") }
+      format.html { redirect_to shopping_items_path }
+      format.turbo_stream { render_group_update }
     end
   end
 
@@ -119,6 +119,14 @@ class ShoppingItemsController < ApplicationController
     render turbo_stream: [
       turbo_stream.update("flash-messages", partial: "shared/flash_messages"),
       turbo_stream.replace("shopping_items", partial: "shopping_items/list")
+    ], status: status
+  end
+
+  def render_group_update(status: :ok)
+    prepare_index_state
+    render turbo_stream: [
+      turbo_stream.replace("shopping_unpurchased_group", partial: "shopping_items/unpurchased_group"),
+      turbo_stream.replace("shopping_purchased_group", partial: "shopping_items/purchased_group")
     ], status: status
   end
 end

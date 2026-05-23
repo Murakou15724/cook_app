@@ -5,8 +5,9 @@ class AuthenticationFlowTest < ActionDispatch::IntegrationTest
     post signup_path, params: {
       user: {
         email: "new@example.com",
-        password: "password",
-        password_confirmation: "password"
+        nickname: "新規ユーザー",
+        password: "password1",
+        password_confirmation: "password1"
       }
     }
 
@@ -14,6 +15,22 @@ class AuthenticationFlowTest < ActionDispatch::IntegrationTest
     follow_redirect!
     assert_response :success
     assert_select "h1", "今日の献立"
+    assert_equal "新規ユーザー", User.find_by!(email: "new@example.com").nickname
+  end
+
+  test "signup assigns default nickname when nickname is blank" do
+    post signup_path, params: {
+      user: {
+        email: "blank-nickname@example.com",
+        nickname: "",
+        password: "password1",
+        password_confirmation: "password1"
+      }
+    }
+
+    user = User.find_by!(email: "blank-nickname@example.com")
+    assert_redirected_to root_path
+    assert_equal "ユーザー#{user.id}", user.nickname
   end
 
   test "signup rejects invalid input" do
@@ -32,11 +49,11 @@ class AuthenticationFlowTest < ActionDispatch::IntegrationTest
   test "login succeeds and logout protects root" do
     User.create!(
       email: "login@example.com",
-      password: "password",
-      password_confirmation: "password"
+      password: "password1",
+      password_confirmation: "password1"
     )
 
-    post login_path, params: { email: "login@example.com", password: "password" }
+    post login_path, params: { email: "login@example.com", password: "password1" }
     assert_redirected_to root_path
 
     delete logout_path
@@ -54,7 +71,7 @@ class AuthenticationFlowTest < ActionDispatch::IntegrationTest
     assert_select "input[name='password'][autocomplete='off']"
     assert_select "a", { text: /パスワード/, count: 0 }
 
-    post login_path, params: { email: "none@example.com", password: "password" }
+    post login_path, params: { email: "none@example.com", password: "password1" }
     assert_response :unprocessable_content
     assert_select ".flash-alert"
   end
@@ -64,6 +81,7 @@ class AuthenticationFlowTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "form[autocomplete='off']"
     assert_select "input[name='user[email]'][autocomplete='off']"
+    assert_select "input[name='user[nickname]'][autocomplete='off']"
     assert_select "input[name='user[password]'][autocomplete='off']"
     assert_select "input[name='user[password_confirmation]'][autocomplete='off']"
   end

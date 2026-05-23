@@ -1,6 +1,6 @@
 <section class="page-title">
   <h1>新規会員登録</h1>
-  <p>メールアドレスとパスワードを登録します。</p>
+  <p>メールアドレス、ニックネーム、パスワードを登録します。</p>
 </section>
 
 <%= render "shared/error_messages", object: @user %>
@@ -12,13 +12,18 @@
   </div>
 
   <div class="field">
+    <%= form.label :nickname, "ニックネーム" %>
+    <%= form.text_field :nickname, autocomplete: "off", maxlength: 20 %>
+  </div>
+
+  <div class="field">
     <%= form.label :password, "パスワード" %>
-    <%= form.password_field :password, autocomplete: "off", required: true, minlength: 6 %>
+    <%= form.password_field :password, autocomplete: "off", required: true, minlength: 6, maxlength: 20, pattern: "[A-Za-z0-9]*" %>
   </div>
 
   <div class="field">
     <%= form.label :password_confirmation, "パスワード確認" %>
-    <%= form.password_field :password_confirmation, autocomplete: "off", required: true, minlength: 6 %>
+    <%= form.password_field :password_confirmation, autocomplete: "off", required: true, minlength: 6, maxlength: 20, pattern: "[A-Za-z0-9]*" %>
   </div>
 
   <%= form.submit "登録する", class: "primary-button" %>

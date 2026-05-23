@@ -42,10 +42,6 @@
       <% if @person_tag %><%= link_to edit_person_tag_path(@person_tag), edit_person_tag_path(@person_tag) %><% else %><span class="small-note">/person_tags/:id/edit</span><% end %>
     </div>
     <div class="dev-link-row">
-      <span>管理者ユーザー編集</span>
-      <% if @admin_user %><%= link_to edit_admin_user_path(@admin_user), edit_admin_user_path(@admin_user) %><% else %><span class="small-note">/admin/users/:id/edit</span><% end %>
-    </div>
-    <div class="dev-link-row">
       <span>管理者ユーザー詳細</span>
       <% if @admin_user %><%= link_to admin_user_path(@admin_user), admin_user_path(@admin_user) %><% else %><span class="small-note">/admin/users/:id</span><% end %>
     </div>
