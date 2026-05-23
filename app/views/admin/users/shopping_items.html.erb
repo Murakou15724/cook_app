@@ -1,0 +1,31 @@
+<section class="page-title">
+  <p class="eyebrow">Admin View</p>
+  <h1>買い物リスト</h1>
+  <p><%= @user.email %></p>
+</section>
+
+<section class="card">
+  <%= form_with url: shopping_items_admin_user_path(@user), method: :get, class: "compact-add-form", html: { autocomplete: "off" } do %>
+    <div class="form-group">
+      <%= label_tag :q, "キーワード" %>
+      <%= search_field_tag :q, @query, autocomplete: "off" %>
+    </div>
+    <%= submit_tag "検索", class: "secondary-button" %>
+  <% end %>
+</section>
+
+<% if @shopping_items.any? %>
+  <section class="shopping-list-card">
+    <% @shopping_items.each do |item| %>
+      <article class="shopping-row <%= "purchased" if item.purchased? %>">
+        <div class="check-icon"><%= item.purchased? ? "済" : "未" %></div>
+        <div class="shopping-row-main">
+          <h3><%= item.name %></h3>
+          <p><%= shopping_item_context(item) %></p>
+        </div>
+      </article>
+    <% end %>
+  </section>
+<% else %>
+  <p class="empty-state">買い物項目はありません。</p>
+<% end %>

@@ -91,7 +91,8 @@ a {
 }
 
 .header .ghost-button,
-.header .link-button {
+.header .link-button,
+.header .admin-chip {
   min-height: 30px;
   padding: 0 9px;
   border-radius: 12px;
@@ -138,6 +139,34 @@ a {
 
 .page-title .eyebrow {
   grid-column: 1;
+}
+
+.page-title.with-action {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.page-title.with-action > div {
+  min-width: 0;
+}
+
+.page-title.with-action h1,
+.page-title.with-action .eyebrow {
+  grid-column: auto;
+}
+
+.page-title.with-action > p:not(.eyebrow) {
+  grid-column: 1 / -1;
+  grid-row: auto;
+  margin-top: 2px;
+}
+
+.title-action {
+  min-height: 34px;
+  padding: 0 11px;
+  border-radius: 12px;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .flash-stack,
@@ -425,6 +454,14 @@ select:focus {
   grid-column: 1 / -1;
 }
 
+.quick-actions form {
+  margin: 0;
+}
+
+.quick-actions form .danger-button {
+  width: 100%;
+}
+
 .summary {
   grid-template-columns: 1fr 1fr;
 }
@@ -689,6 +726,79 @@ select:focus {
   color: var(--muted);
   font-size: 13px;
   overflow-wrap: anywhere;
+}
+
+.record-dish {
+  align-items: flex-start;
+}
+
+.record-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.record-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.record-heading h3 {
+  min-width: 0;
+}
+
+.record-heading .status-badge {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.record-tags {
+  margin: 7px 0 0;
+}
+
+.cooking-search-card {
+  display: grid;
+  gap: 10px;
+}
+
+.cooking-search-form,
+.cooking-tag-filter-form {
+  display: grid;
+  gap: 8px;
+}
+
+.filter-chip-list {
+  margin-bottom: 0;
+}
+
+.filter-chip-list .check-row {
+  margin: 0;
+}
+
+.record-filter-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.record-filter-actions .secondary-button {
+  min-height: 38px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.eating-out-open-button {
+  min-height: 42px;
+  border: 1px solid #f0c8ae;
+  border-radius: 14px;
+  background: #fff7ef;
+  color: var(--primary-dark);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 5px 14px rgba(228, 123, 73, 0.12);
 }
 
 .tag-list,

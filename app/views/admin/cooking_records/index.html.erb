@@ -6,7 +6,7 @@
 <section class="card">
   <% if @cooking_records.any? %>
     <% @cooking_records.each do |record| %>
-      <div class="dev-link-row"><span><%= record.user.email %> / <%= record.name %></span><%= link_to "詳細", admin_cooking_record_path(record) %></div>
+      <div class="dev-link-row"><span><%= record.user.email %> / <%= record.name %></span></div>
     <% end %>
   <% else %>
     <p class="empty-state">過去料理はありません。</p>

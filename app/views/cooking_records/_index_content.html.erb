@@ -1,0 +1,174 @@
+<%= turbo_frame_tag "cooking_records", data: { controller: "cooking-records" } do %>
+  <section class="page-title">
+    <p class="eyebrow">Records</p>
+    <h1>過去料理一覧</h1>
+    <p>料理名・メモ・人物タグで振り返ります。</p>
+  </section>
+
+  <%= render "shared/error_messages", object: @cooking_record %>
+
+  <section class="card cooking-search-card">
+    <%= form_with url: cooking_records_path, method: :get, class: "cooking-search-form", html: { autocomplete: "off" } do %>
+      <div class="section-title">
+        <h2>検索</h2>
+        <span class="count-badge"><%= @cooking_records.size %>件</span>
+      </div>
+
+      <div class="form-group">
+        <%= label_tag :q, "キーワード" %>
+        <%= search_field_tag :q, @query, placeholder: "料理名・メモで検索", autocomplete: "off" %>
+      </div>
+
+      <div class="record-filter-actions">
+        <%= button_tag "過去2週間の昼食表示", type: "submit", name: "display_mode", value: "recent_lunch", class: "secondary-button" %>
+        <%= button_tag "過去2週間の夕食表示", type: "submit", name: "display_mode", value: "recent_dinner", class: "secondary-button" %>
+        <%= button_tag "全て表示", type: "submit", name: "display_mode", value: "all", class: "secondary-button" %>
+        <%= button_tag "全て非表示", type: "submit", name: "display_mode", value: "none", class: "secondary-button" %>
+      </div>
+    <% end %>
+
+    <button type="button" class="eating-out-open-button" data-action="click->cooking-records#open">
+      外食記録を保存
+    </button>
+
+    <%= form_with url: cooking_records_path, method: :get, class: "cooking-tag-filter-form", html: { autocomplete: "off" } do %>
+      <%= hidden_field_tag :q, @query %>
+      <%= hidden_field_tag :display_mode, @display_mode == "none" ? "all" : @display_mode %>
+      <% if @person_tags.any? %>
+        <div class="form-group">
+          <div class="section-title compact">
+            <h2>人物タグ</h2>
+            <span class="small-note">AND検索</span>
+          </div>
+          <div class="chip-list filter-chip-list">
+            <% @person_tags.each do |tag| %>
+              <label class="check-row">
+                <%= check_box_tag "person_tag_ids[]", tag.id, @selected_person_tag_ids.include?(tag.id) %>
+                <%= tag.name %>
+              </label>
+            <% end %>
+          </div>
+        </div>
+        <%= button_tag "人物タグで絞り込む", type: "submit", class: "secondary-button full-width" %>
+      <% end %>
+    <% end %>
+  </section>
+
+  <% if @cooking_records.any? %>
+    <% @cooking_records.group_by(&:cooked_on).each do |date, records| %>
+      <section class="card">
+        <div class="section-title">
+          <h2><%= app_date(date) %></h2>
+        </div>
+
+        <% ["lunch", "dinner"].each do |meal_type| %>
+          <% meal_records = records.select { |record| record.meal_type == meal_type } %>
+          <div class="meal-block">
+            <div class="meal-head">
+              <div class="meal-head-main">
+                <span class="meal-label"><%= meal_type_label(meal_type) %></span>
+              </div>
+            </div>
+
+            <% if meal_records.any? %>
+              <% meal_records.each do |record| %>
+                <article class="dish record-dish">
+                  <div class="dish-icon"><%= dish_icon(record.name) %></div>
+                  <div class="record-main">
+                    <div class="record-heading">
+                      <h3><%= link_to record.name, cooking_record_path(record), data: { turbo_frame: "_top" } %></h3>
+                      <% if record.eating_out? %>
+                        <span class="status-badge blue">外食</span>
+                      <% end %>
+                    </div>
+                    <% if record.memo.present? %>
+                      <p class="meal-dish-detail">
+                        <span>メモ</span>
+                        <%= record.memo %>
+                      </p>
+                    <% end %>
+                    <% if record.person_tags.any? %>
+                      <div class="chip-list record-tags">
+                        <% record.person_tags.each do |tag| %>
+                          <span><%= tag.name %></span>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                </article>
+              <% end %>
+            <% else %>
+              <p class="empty-state">記録なし</p>
+            <% end %>
+          </div>
+        <% end %>
+      </section>
+    <% end %>
+  <% else %>
+    <% empty_text = @display_mode == "none" ? "表示条件を選択すると過去料理を表示します。" : "条件に一致する過去料理はありません。" %>
+    <p class="empty-state"><%= empty_text %></p>
+  <% end %>
+
+  <div class="drawer-backdrop" hidden data-cooking-records-target="backdrop" data-action="click->cooking-records#close"></div>
+  <section class="edit-drawer" hidden data-cooking-records-target="drawer" aria-modal="true" role="dialog" aria-labelledby="cooking-record-create-title">
+    <div class="drawer-handle"></div>
+    <div class="drawer-head">
+      <h2 id="cooking-record-create-title">外食記録</h2>
+      <button type="button" class="close-btn" aria-label="閉じる" data-action="cooking-records#close">×</button>
+    </div>
+
+    <div class="drawer-scroll-body">
+      <%= form_with model: @cooking_record, url: cooking_records_path(format: :turbo_stream), class: "meal-drawer-form", html: { autocomplete: "off" }, data: { cooking_records_target: "form" } do |form| %>
+        <div class="meal-plan-basic-fields">
+          <div class="form-group">
+            <%= form.label :cooked_on, "日付" %>
+            <%= form.date_field :cooked_on, value: @cooking_record.cooked_on || Date.current, autocomplete: "off" %>
+          </div>
+
+          <div class="form-group">
+            <label>昼夕</label>
+            <div class="segment vertical">
+              <label><%= form.radio_button :meal_type, "lunch", checked: @cooking_record.meal_type.blank? || @cooking_record.lunch? %> 昼食</label>
+              <label><%= form.radio_button :meal_type, "dinner", checked: @cooking_record.dinner? %> 夕食</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :name, "メニュー名" %>
+          <%= form.text_field :name, autocomplete: "off" %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :memo, "メモ" %>
+          <%= form.text_area :memo, autocomplete: "off" %>
+        </div>
+
+        <section class="dish-card">
+          <div class="section-title compact">
+            <h2>人物</h2>
+            <span class="count-badge"><%= @person_tags.size %>件</span>
+          </div>
+          <% if @person_tags.any? %>
+            <div class="tag-list drawer-tag-list">
+              <% @person_tags.each do |tag| %>
+                <label>
+                  <%= check_box_tag "person_tag_ids[]", tag.id, @cooking_record.person_tag_ids.include?(tag.id) %>
+                  <span><%= tag.name %></span>
+                </label>
+              <% end %>
+            </div>
+          <% else %>
+            <p class="empty-state">人物タグはまだありません。</p>
+          <% end %>
+        </section>
+      <% end %>
+    </div>
+
+    <p class="drawer-note">保存後は過去料理一覧に反映されます。</p>
+    <div class="drawer-actions">
+      <button type="button" class="save-btn" data-action="cooking-records#save">保存する</button>
+      <button type="button" class="secondary-button" data-action="cooking-records#close">閉じる</button>
+    </div>
+  </section>
+<% end %>

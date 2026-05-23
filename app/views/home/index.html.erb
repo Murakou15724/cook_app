@@ -1,15 +1,11 @@
-<section class="page-title">
-  <p class="eyebrow">今日の予定</p>
-  <h1>今日の献立</h1>
+<section class="page-title with-action">
+  <div>
+    <p class="eyebrow">今日の予定</p>
+    <h1>今日の献立</h1>
+  </div>
+  <%= link_to "献立を作成", new_meal_plan_path, class: "primary-button title-action" %>
   <p><%= app_date(@today) %></p>
 </section>
-
-<div class="quick-actions">
-  <%= link_to "献立を作成", new_meal_plan_path, class: "primary-button" %>
-  <% if current_user.admin? %>
-    <%= link_to "管理者ホーム", admin_root_path, class: "admin-chip" %>
-  <% end %>
-</div>
 
 <section class="card">
   <div class="section-title">
@@ -31,14 +27,14 @@
       <% if meal_plan.present? %>
         <% meal_plan.plan_dishes.ordered.each do |dish| %>
           <article class="dish">
-            <div class="dish-icon"><%= dish.eating_out? ? "外" : "食" %></div>
+            <div class="dish-icon"><%= dish_icon(dish.name) %></div>
             <div>
               <h3><%= dish.name %><%= "（外食）" if dish.eating_out? %></h3>
               <% ingredients = dish.dish_ingredients.sort_by(&:id).map(&:name).reject(&:blank?) %>
               <% if ingredients.any? %>
                 <p class="meal-dish-detail">
                   <span>食材</span>
-                  <%= ingredients.join("、") %>
+                  <%= ingredients.join(", ") %>
                 </p>
               <% end %>
               <% if dish.memo.present? %>

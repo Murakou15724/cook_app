@@ -1,0 +1,45 @@
+<section class="page-title">
+  <p class="eyebrow">Admin View</p>
+  <h1>過去料理一覧</h1>
+  <p><%= @user.email %></p>
+</section>
+
+<section class="card">
+  <%= form_with url: cooking_records_admin_user_path(@user), method: :get, class: "compact-add-form", html: { autocomplete: "off" } do %>
+    <div class="form-group">
+      <%= label_tag :q, "キーワード" %>
+      <%= search_field_tag :q, @query, autocomplete: "off" %>
+    </div>
+    <%= submit_tag "検索", class: "secondary-button" %>
+  <% end %>
+</section>
+
+<% if @cooking_records.any? %>
+  <% @cooking_records.group_by(&:cooked_on).each do |date, records| %>
+    <section class="card">
+      <div class="section-title"><h2><%= app_date(date) %></h2></div>
+      <% records.each do |record| %>
+        <article class="dish record-dish">
+          <div class="dish-icon"><%= dish_icon(record.name) %></div>
+          <div class="record-main">
+            <div class="record-heading">
+              <h3><%= record.name %></h3>
+              <% if record.eating_out? %><span class="status-badge blue">外食</span><% end %>
+            </div>
+            <p><%= meal_type_label(record.meal_type) %></p>
+            <% if record.memo.present? %>
+              <p class="meal-dish-detail"><span>メモ</span><%= record.memo %></p>
+            <% end %>
+            <% if record.person_tags.any? %>
+              <div class="chip-list record-tags">
+                <% record.person_tags.each do |tag| %><span><%= tag.name %></span><% end %>
+              </div>
+            <% end %>
+          </div>
+        </article>
+      <% end %>
+    </section>
+  <% end %>
+<% else %>
+  <p class="empty-state">過去料理はありません。</p>
+<% end %>

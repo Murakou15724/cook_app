@@ -46,42 +46,27 @@
       <% if @admin_user %><%= link_to edit_admin_user_path(@admin_user), edit_admin_user_path(@admin_user) %><% else %><span class="small-note">/admin/users/:id/edit</span><% end %>
     </div>
     <div class="dev-link-row">
-      <span>管理者献立詳細</span>
-      <% if @admin_meal_plan %><%= link_to admin_meal_plan_path(@admin_meal_plan), admin_meal_plan_path(@admin_meal_plan) %><% else %><span class="small-note">/admin/meal_plans/:id</span><% end %>
+      <span>管理者ユーザー詳細</span>
+      <% if @admin_user %><%= link_to admin_user_path(@admin_user), admin_user_path(@admin_user) %><% else %><span class="small-note">/admin/users/:id</span><% end %>
     </div>
     <div class="dev-link-row">
-      <span>管理者献立編集</span>
-      <% if @admin_meal_plan %><%= link_to edit_admin_meal_plan_path(@admin_meal_plan), edit_admin_meal_plan_path(@admin_meal_plan) %><% else %><span class="small-note">/admin/meal_plans/:id/edit</span><% end %>
+      <span>管理者ユーザー別献立一覧</span>
+      <% if @admin_user %><%= link_to meal_plans_admin_user_path(@admin_user), meal_plans_admin_user_path(@admin_user) %><% else %><span class="small-note">/admin/users/:id/meal_plans</span><% end %>
     </div>
     <div class="dev-link-row">
-      <span>管理者過去料理詳細</span>
-      <% if @admin_cooking_record %><%= link_to admin_cooking_record_path(@admin_cooking_record), admin_cooking_record_path(@admin_cooking_record) %><% else %><span class="small-note">/admin/cooking_records/:id</span><% end %>
+      <span>管理者ユーザー別買い物リスト</span>
+      <% if @admin_user %><%= link_to shopping_items_admin_user_path(@admin_user), shopping_items_admin_user_path(@admin_user) %><% else %><span class="small-note">/admin/users/:id/shopping_items</span><% end %>
     </div>
     <div class="dev-link-row">
-      <span>管理者過去料理編集</span>
-      <% if @admin_cooking_record %><%= link_to edit_admin_cooking_record_path(@admin_cooking_record), edit_admin_cooking_record_path(@admin_cooking_record) %><% else %><span class="small-note">/admin/cooking_records/:id/edit</span><% end %>
-    </div>
-    <div class="dev-link-row">
-      <span>管理者買い物詳細</span>
-      <% if @admin_shopping_item %><%= link_to admin_shopping_item_path(@admin_shopping_item), admin_shopping_item_path(@admin_shopping_item) %><% else %><span class="small-note">/admin/shopping_items/:id</span><% end %>
-    </div>
-    <div class="dev-link-row">
-      <span>管理者買い物編集</span>
-      <% if @admin_shopping_item %><%= link_to edit_admin_shopping_item_path(@admin_shopping_item), edit_admin_shopping_item_path(@admin_shopping_item) %><% else %><span class="small-note">/admin/shopping_items/:id/edit</span><% end %>
-    </div>
-    <div class="dev-link-row">
-      <span>管理者人物タグ詳細</span>
-      <% if @admin_person_tag %><%= link_to admin_person_tag_path(@admin_person_tag), admin_person_tag_path(@admin_person_tag) %><% else %><span class="small-note">/admin/person_tags/:id</span><% end %>
-    </div>
-    <div class="dev-link-row">
-      <span>管理者人物タグ編集</span>
-      <% if @admin_person_tag %><%= link_to edit_admin_person_tag_path(@admin_person_tag), edit_admin_person_tag_path(@admin_person_tag) %><% else %><span class="small-note">/admin/person_tags/:id/edit</span><% end %>
+      <span>管理者ユーザー別過去料理一覧</span>
+      <% if @admin_user %><%= link_to cooking_records_admin_user_path(@admin_user), cooking_records_admin_user_path(@admin_user) %><% else %><span class="small-note">/admin/users/:id/cooking_records</span><% end %>
     </div>
   </section>
 
   <section class="card">
     <div class="section-title"><h2>管理者・エラー</h2></div>
     <% [
+      ["管理者新規登録", admin_signup_path],
       ["管理者ホーム", admin_root_path],
       ["ユーザー管理", admin_users_path],
       ["献立管理", admin_meal_plans_path],

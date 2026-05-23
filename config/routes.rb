@@ -34,18 +34,27 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :cooking_records, only: [:index, :show, :edit, :update, :destroy]
+  resources :cooking_records, only: [:index, :show, :edit, :update, :destroy, :create]
   resources :person_tags, except: [:show]
 
   # 管理者画面
   namespace :admin do
     root "dashboard#index"
 
-    resources :users, only: [:index, :edit, :update, :destroy]
-    resources :meal_plans, only: [:index, :show, :edit, :update, :destroy]
-    resources :cooking_records, only: [:index, :show, :edit, :update, :destroy]
-    resources :shopping_items, only: [:index, :show, :edit, :update, :destroy]
-    resources :person_tags, only: [:index, :show, :edit, :update, :destroy]
+    get "signup", to: "registrations#new", as: :signup
+    post "signup", to: "registrations#create"
+
+    resources :users, only: [:index, :show, :edit, :update, :destroy] do
+      member do
+        get :meal_plans
+        get :shopping_items
+        get :cooking_records
+      end
+    end
+    resources :meal_plans, only: [:index, :destroy]
+    resources :cooking_records, only: [:index, :destroy]
+    resources :shopping_items, only: [:index, :destroy]
+    resources :person_tags, only: [:index, :destroy]
   end
 
   # エラー画面

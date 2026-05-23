@@ -20,6 +20,7 @@ class HomeTest < ActionDispatch::IntegrationTest
     lunch.person_tags << tag
     curry = lunch.plan_dishes.create!(name: "カレー", memo: "甘口", position: 0)
     curry.dish_ingredients.create!(name: "玉ねぎ")
+    curry.dish_ingredients.create!(name: "にんじん")
     @user.meal_plans.create!(meal_date: Date.current, meal_type: :dinner)
          .plan_dishes.create!(name: "焼き魚", position: 0)
     @other_user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
@@ -33,11 +34,12 @@ class HomeTest < ActionDispatch::IntegrationTest
     assert_select ".meal-label", "昼食"
     assert_select ".meal-label", "夕食"
     assert_select ".meal-tag-line", "家族"
+    assert_select ".dish-icon", "🍛"
     assert_select "h3", /カレー/
     assert_select "h3", /焼き魚/
-    assert_select ".meal-dish-detail", /玉ねぎ/
+    assert_select ".meal-dish-detail", /玉ねぎ, にんじん/
     assert_select ".meal-dish-detail", /甘口/
-    assert_select ".quick-actions a", "献立を作成"
+    assert_select ".page-title.with-action a.title-action", "献立を作成"
     assert_select ".quick-actions a", { text: "買い物リスト", count: 0 }
     assert_select ".quick-actions a", { text: "プロフィール", count: 0 }
     assert_select "body", { text: /他人の料理/, count: 0 }
@@ -67,6 +69,6 @@ class HomeTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: admin.email, password: "password" }
     follow_redirect!
 
-    assert_select ".admin-chip", "管理者ホーム"
+    assert_select ".header .admin-chip", "管理者ホーム"
   end
 end

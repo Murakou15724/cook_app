@@ -1,0 +1,45 @@
+<section class="page-title">
+  <p class="eyebrow">Admin View</p>
+  <h1>献立一覧</h1>
+  <p><%= @user.email %></p>
+</section>
+
+<section class="card">
+  <%= form_with url: meal_plans_admin_user_path(@user), method: :get, class: "compact-add-form", html: { autocomplete: "off" } do %>
+    <div class="form-group">
+      <%= label_tag :q, "キーワード" %>
+      <%= search_field_tag :q, @query, autocomplete: "off" %>
+    </div>
+    <%= submit_tag "検索", class: "secondary-button" %>
+  <% end %>
+</section>
+
+<% if @meal_plans.any? %>
+  <% @meal_plans.group_by(&:meal_date).each do |date, plans| %>
+    <section class="card">
+      <div class="section-title"><h2><%= app_date(date) %></h2></div>
+      <% plans.each do |plan| %>
+        <div class="meal-block">
+          <div class="meal-head"><span class="meal-label"><%= meal_type_label(plan.meal_type) %></span></div>
+          <% plan.plan_dishes.ordered.each do |dish| %>
+            <article class="dish">
+              <div class="dish-icon"><%= dish_icon(dish.name) %></div>
+              <div>
+                <h3><%= dish.name %><%= "（外食）" if dish.eating_out? %></h3>
+                <% ingredients = dish.dish_ingredients.sort_by(&:id).map(&:name).reject(&:blank?) %>
+                <% if ingredients.any? %>
+                  <p class="meal-dish-detail"><span>食材</span><%= ingredients.join(", ") %></p>
+                <% end %>
+                <% if dish.memo.present? %>
+                  <p class="meal-dish-detail"><span>メモ</span><%= dish.memo %></p>
+                <% end %>
+              </div>
+            </article>
+          <% end %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+<% else %>
+  <p class="empty-state">献立はありません。</p>
+<% end %>

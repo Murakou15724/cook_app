@@ -15,4 +15,5 @@
 <div class="quick-actions">
   <%= link_to "編集", edit_cooking_record_path(@cooking_record), class: "secondary-button" %>
   <%= link_to "一覧へ", cooking_records_path, class: "secondary-button" %>
+  <%= button_to "削除", cooking_record_path(@cooking_record), method: :delete, class: "danger-button", data: { turbo_confirm: "本当に削除しますか？" } %>
 </div>

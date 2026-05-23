@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_23_030100) do
+ActiveRecord::Schema[7.1].define(version: 2026_05_23_040100) do
   create_table "cooking_record_person_tags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "cooking_record_id", null: false
     t.bigint "person_tag_id", null: false
@@ -25,8 +25,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_23_030100) do
 
   create_table "cooking_records", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "user_id", null: false
-    t.bigint "source_meal_plan_id", null: false
-    t.bigint "source_plan_dish_id", null: false
+    t.bigint "source_meal_plan_id"
+    t.bigint "source_plan_dish_id"
     t.string "name", null: false
     t.date "cooked_on", null: false
     t.integer "meal_type", null: false

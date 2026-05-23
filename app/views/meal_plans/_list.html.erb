@@ -28,13 +28,14 @@
                   type="button"
                   class="dish meal-edit-trigger"
                   data-action="click->meal-plan-edit#open">
+                  <div class="dish-icon"><%= dish_icon(dish.name) %></div>
                   <div>
                     <h3><%= dish.name %></h3>
                     <% ingredients = dish.dish_ingredients.sort_by(&:id).map(&:name).reject(&:blank?) %>
                     <% if ingredients.any? %>
                       <p class="meal-dish-detail">
                         <span>食材</span>
-                        <%= ingredients.join("、") %>
+                        <%= ingredients.join(", ") %>
                       </p>
                     <% end %>
                     <% if dish.memo.present? %>

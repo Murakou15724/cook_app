@@ -1,0 +1,26 @@
+<section class="page-title">
+  <p class="eyebrow">Admin</p>
+  <h1>管理者新規登録</h1>
+  <p>Basic認証後に管理者アカウントを作成します。</p>
+</section>
+
+<%= render "shared/error_messages", object: @user %>
+
+<%= form_with model: @user, url: admin_signup_path, class: "form-card", html: { autocomplete: "off" } do |form| %>
+  <div class="form-group">
+    <%= form.label :email, "メールアドレス" %>
+    <%= form.email_field :email, autocomplete: "off" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :password, "パスワード" %>
+    <%= form.password_field :password, autocomplete: "off" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :password_confirmation, "パスワード確認" %>
+    <%= form.password_field :password_confirmation, autocomplete: "off" %>
+  </div>
+
+  <%= form.submit "管理者を登録", class: "primary-button" %>
+<% end %>

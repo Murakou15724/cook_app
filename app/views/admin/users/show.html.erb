@@ -1,0 +1,21 @@
+<section class="page-title">
+  <p class="eyebrow">Admin</p>
+  <h1>ユーザー詳細</h1>
+  <p>ID <%= @user.id %></p>
+</section>
+
+<section class="card">
+  <div class="section-title"><h2>ログイン情報</h2></div>
+  <p><strong>メールアドレス</strong></p>
+  <p><%= @user.email %></p>
+  <p class="small-note">パスワードは復元できないため、ハッシュ値を表示します。</p>
+  <p><strong>password_digest</strong></p>
+  <p class="small-note"><%= @user.password_digest %></p>
+</section>
+
+<section class="card">
+  <div class="section-title"><h2>閲覧</h2></div>
+  <div class="dev-link-row"><span>買い物リスト</span><%= link_to shopping_items_admin_user_path(@user), shopping_items_admin_user_path(@user) %></div>
+  <div class="dev-link-row"><span>献立一覧</span><%= link_to meal_plans_admin_user_path(@user), meal_plans_admin_user_path(@user) %></div>
+  <div class="dev-link-row"><span>過去料理一覧</span><%= link_to cooking_records_admin_user_path(@user), cooking_records_admin_user_path(@user) %></div>
+</section>

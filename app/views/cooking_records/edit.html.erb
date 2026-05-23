@@ -4,9 +4,63 @@
   <p><%= @cooking_record.name %></p>
 </section>
 
+<%= render "shared/error_messages", object: @cooking_record %>
+
 <%= form_with url: cooking_record_path(@cooking_record), method: :patch, class: "form-card", html: { autocomplete: "off" } do |form| %>
-  <div class="form-group"><%= form.label :name, "料理名" %><%= form.text_field :name, value: @cooking_record.name, autocomplete: "off" %></div>
-  <div class="form-group"><%= form.label :cooked_on, "食事日" %><%= form.date_field :cooked_on, value: @cooking_record.cooked_on, autocomplete: "off" %></div>
-  <div class="form-group"><%= form.label :memo, "メモ" %><%= form.text_area :memo, value: @cooking_record.memo, autocomplete: "off" %></div>
+  <div class="meal-plan-basic-fields">
+    <div class="form-group">
+      <%= form.label :cooked_on, "食事日" %>
+      <%= form.date_field :cooked_on, value: @cooking_record.cooked_on, autocomplete: "off" %>
+    </div>
+
+    <div class="form-group">
+      <label>食事区分</label>
+      <div class="segment vertical">
+        <label><%= form.radio_button :meal_type, "lunch", checked: @cooking_record.lunch? %> 昼食</label>
+        <label><%= form.radio_button :meal_type, "dinner", checked: @cooking_record.dinner? %> 夕食</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :name, "料理名" %>
+    <%= form.text_field :name, value: @cooking_record.name, autocomplete: "off" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :memo, "メモ" %>
+    <%= form.text_area :memo, value: @cooking_record.memo, autocomplete: "off" %>
+  </div>
+
+  <div class="form-group">
+    <label class="check-row">
+      <%= form.check_box :eating_out, { checked: @cooking_record.eating_out? }, "1", "0" %>
+      外食
+    </label>
+  </div>
+
+  <section class="card">
+    <div class="section-title">
+      <h2>人物タグ</h2>
+    </div>
+    <% if @person_tags.any? %>
+      <div class="chip-list">
+        <% @person_tags.each do |tag| %>
+          <label class="check-row">
+            <%= check_box_tag "person_tag_ids[]", tag.id, @cooking_record.person_tag_ids.include?(tag.id) %>
+            <%= tag.name %>
+          </label>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="empty-state">人物タグはまだありません。</p>
+    <% end %>
+  </section>
+
   <%= form.submit "更新する", class: "primary-button" %>
 <% end %>
+
+<div class="quick-actions">
+  <%= button_to "削除する", cooking_record_path(@cooking_record), method: :delete, class: "danger-button", data: { turbo_confirm: "本当に削除しますか？" } %>
+  <%= link_to "詳細へ", cooking_record_path(@cooking_record), class: "secondary-button" %>
+</div>

@@ -42,7 +42,7 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_select ".summary-card", 0
     assert_select ".create-button", 0
     assert_select ".edit-link", 0
-    assert_select ".dish-icon", 0
+    assert_select ".dish-icon", "🍛"
     assert_select "h3", /カレー/
     assert_select "h3", /サラダ/
     assert_select "h3", /焼き魚/
@@ -64,8 +64,9 @@ class MealPlansTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select ".meal-tag-line", "家族"
+    assert_select ".dish-icon", "🍛"
     assert_select ".meal-edit-trigger h3", "カレー"
-    assert_select ".meal-dish-detail", /玉ねぎ、にんじん/
+    assert_select ".meal-dish-detail", /玉ねぎ, にんじん/
     assert_select ".meal-dish-detail", /甘口/
     assert_select ".edit-drawer"
 

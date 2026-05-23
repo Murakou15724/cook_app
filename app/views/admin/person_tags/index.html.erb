@@ -6,7 +6,7 @@
 <section class="card">
   <% if @person_tags.any? %>
     <% @person_tags.each do |tag| %>
-      <div class="dev-link-row"><span><%= tag.user.email %> / <%= tag.name %></span><%= link_to "詳細", admin_person_tag_path(tag) %></div>
+      <div class="dev-link-row"><span><%= tag.user.email %> / <%= tag.name %></span></div>
     <% end %>
   <% else %>
     <p class="empty-state">人物タグはありません。</p>
