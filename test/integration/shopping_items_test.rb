@@ -45,6 +45,8 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
     assert_select "h3", "牛乳"
     assert_select ".shopping-row:not(.purchased) .shopping-delete-form", 0
     assert_select ".shopping-row:not(.purchased) .shopping-edit-trigger"
+    assert_select ".shopping-check-form[data-controller='shopping-toggle']"
+    assert_select ".shopping-check[data-action='change->shopping-toggle#submit']"
     assert_select ".edit-drawer"
     assert_select "body", { text: /他人の料理/, count: 0 }
     assert_select "body", { text: /数量/, count: 0 }

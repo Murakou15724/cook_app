@@ -4,8 +4,8 @@
     <section class="shopping-list-card" data-controller="shopping-sort" data-shopping-sort-url-value="<%= reorder_shopping_items_path(format: :json) %>">
       <% @unpurchased_items.each do |item| %>
         <article class="shopping-row" draggable="true" data-shopping-sort-target="item" data-shopping-item-id="<%= item.id %>">
-          <%= form_with url: toggle_purchased_shopping_item_path(item), method: :patch, class: "shopping-check-form" do %>
-            <%= check_box_tag "purchased", "1", false, class: "shopping-check", aria: { label: "#{item.name}を購入済みにする" }, onchange: "this.form.requestSubmit()" %>
+          <%= form_with url: toggle_purchased_shopping_item_path(item), method: :patch, class: "shopping-check-form", data: { controller: "shopping-toggle" } do %>
+            <%= check_box_tag "purchased", "1", false, class: "shopping-check", aria: { label: "#{item.name}を購入済みにする" }, data: { action: "change->shopping-toggle#submit" } %>
           <% end %>
 
           <button
