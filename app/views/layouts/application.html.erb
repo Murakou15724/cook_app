@@ -36,12 +36,12 @@
 
       <% if logged_in? %>
         <nav class="bottom-nav" aria-label="主要ナビゲーション">
-          <%= link_to "ホーム", root_path, class: current_page?(root_path) ? "active" : nil %>
-          <%= link_to "献立", meal_plans_path, class: controller_name == "meal_plans" ? "active" : nil %>
-          <%= link_to "作成", new_meal_plan_path, class: current_page?(new_meal_plan_path) ? "active" : nil %>
-          <%= link_to "買物", shopping_items_path, class: controller_name == "shopping_items" ? "active" : nil %>
-          <%= link_to "履歴", cooking_records_path, class: controller_name == "cooking_records" ? "active" : nil %>
-          <%= link_to "タグ", person_tags_path, class: controller_name == "person_tags" ? "active" : nil %>
+          <%= bottom_nav_link("ホーム", root_path, :home, active: current_page?(root_path)) %>
+          <%= bottom_nav_link("献立", meal_plans_path, :calendar, active: controller_name == "meal_plans" && action_name != "new" && action_name != "create") %>
+          <%= bottom_nav_link("作成", new_meal_plan_path, :plus, active: controller_name == "meal_plans" && (action_name == "new" || action_name == "create")) %>
+          <%= bottom_nav_link("買い物", shopping_items_path, :basket, active: controller_name == "shopping_items") %>
+          <%= bottom_nav_link("履歴", cooking_records_path, :diary, active: controller_name == "cooking_records") %>
+          <%= bottom_nav_link("タグ", person_tags_path, :tag, active: controller_name == "person_tags") %>
         </nav>
       <% end %>
     </div>
