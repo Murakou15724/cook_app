@@ -49,8 +49,11 @@ export default class extends Controller {
     wrapper.innerHTML = this.ingredientTemplateTarget.innerHTML.trim()
     const row = wrapper.firstElementChild
     const input = row.querySelector("input[type='text']")
+    const checkbox = row.querySelector("input[type='checkbox']")
     input.name = `ingredients[${key}][name]`
     row.insertAdjacentHTML("afterbegin", `<input type="hidden" name="ingredients[${key}][dish_id]" value="${dishId}">`)
+    checkbox.name = `ingredients[${key}][add_to_shopping_list]`
+    checkbox.insertAdjacentHTML("beforebegin", `<input type="hidden" name="ingredients[${key}][add_to_shopping_list]" value="0">`)
     list.appendChild(row)
     input.focus()
   }

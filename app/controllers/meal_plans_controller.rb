@@ -166,8 +166,9 @@ class MealPlansController < ApplicationController
       return
     end
 
-    ingredient.update!(name: values[:name].to_s.strip)
-    ingredient.shopping_items.update_all(name: ingredient.name, updated_at: Time.current)
+    add_to_shopping_list = ActiveModel::Type::Boolean.new.cast(values[:add_to_shopping_list])
+    ingredient.update!(name: values[:name].to_s.strip, add_to_shopping_list: add_to_shopping_list)
+    sync_shopping_item_for_quick_ingredient!(ingredient)
   end
 
   def create_quick_ingredient!(values)
@@ -175,12 +176,25 @@ class MealPlansController < ApplicationController
     return if name.blank?
 
     dish = @meal_plan.plan_dishes.find(values[:dish_id])
-    ingredient = dish.dish_ingredients.create!(name: name, add_to_shopping_list: true)
-    current_user.shopping_items.create!(
+    ingredient = dish.dish_ingredients.create!(
+      name: name,
+      add_to_shopping_list: ActiveModel::Type::Boolean.new.cast(values[:add_to_shopping_list])
+    )
+    sync_shopping_item_for_quick_ingredient!(ingredient)
+  end
+
+  def sync_shopping_item_for_quick_ingredient!(ingredient)
+    unless ingredient.add_to_shopping_list?
+      ingredient.shopping_items.destroy_all
+      return
+    end
+
+    shopping_item = current_user.shopping_items.find_or_initialize_by(dish_ingredient: ingredient)
+    shopping_item.update!(
       dish_ingredient: ingredient,
       name: ingredient.name,
       manual: false,
-      purchased: false
+      purchased: shopping_item.purchased? || false
     )
   end
 

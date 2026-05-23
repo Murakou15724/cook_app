@@ -30,8 +30,18 @@
                   data-action="click->meal-plan-edit#open">
                   <div>
                     <h3><%= dish.name %></h3>
+                    <% ingredients = dish.dish_ingredients.sort_by(&:id).map(&:name).reject(&:blank?) %>
+                    <% if ingredients.any? %>
+                      <p class="meal-dish-detail">
+                        <span>食材</span>
+                        <%= ingredients.join("、") %>
+                      </p>
+                    <% end %>
                     <% if dish.memo.present? %>
-                      <p><%= simple_format(dish.memo) %></p>
+                      <p class="meal-dish-detail">
+                        <span>メモ</span>
+                        <%= dish.memo %>
+                      </p>
                     <% end %>
                   </div>
                 </button>
@@ -55,6 +65,7 @@
                       <div class="form-group">
                         <div class="section-title compact">
                           <h2>食材</h2>
+                          <span class="ingredient-shopping-heading">買い物</span>
                         </div>
                         <div class="ingredient-fields drawer-ingredient-list" data-dish-id="<%= dish.id %>">
                         <% dish.dish_ingredients.order(:id).each do |ingredient| %>
@@ -62,6 +73,10 @@
                             <button type="button" class="danger-icon-button" aria-label="食材を削除" data-action="meal-plan-edit#removeIngredient">-</button>
                             <%= hidden_field_tag "ingredients[existing_#{ingredient.id}][id]", ingredient.id %>
                             <%= text_field_tag "ingredients[existing_#{ingredient.id}][name]", ingredient.name, autocomplete: "off" %>
+                            <%= hidden_field_tag "ingredients[existing_#{ingredient.id}][add_to_shopping_list]", "0" %>
+                            <label class="inline-check">
+                              <%= check_box_tag "ingredients[existing_#{ingredient.id}][add_to_shopping_list]", "1", ingredient.add_to_shopping_list?, aria: { label: "買い物リストに追加" } %>
+                            </label>
                             <%= hidden_field_tag "ingredients[existing_#{ingredient.id}][delete]", "0", data: { meal_plan_edit_target: "deleteField" } %>
                           </div>
                         <% end %>
@@ -106,6 +121,9 @@
     <div class="ingredient-field drawer-ingredient-row">
       <button type="button" class="danger-icon-button" aria-label="食材を削除" data-action="meal-plan-edit#removeIngredient">-</button>
       <input type="text" autocomplete="off">
+      <label class="inline-check">
+        <input type="checkbox" value="1" checked aria-label="買い物リストに追加">
+      </label>
     </div>
   </template>
 <% end %>

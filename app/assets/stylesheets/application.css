@@ -574,6 +574,29 @@ select:focus {
   font-weight: 900;
 }
 
+.meal-dish-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.meal-dish-detail span {
+  flex: 0 0 auto;
+  min-width: 34px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #fff2e8;
+  color: var(--primary-dark);
+  font-size: 10px;
+  font-weight: 900;
+  text-align: center;
+}
+
 .meal-drawer-form {
   display: grid;
   gap: 10px;
@@ -623,7 +646,7 @@ select:focus {
 }
 
 .drawer-ingredient-row {
-  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-columns: 34px minmax(0, 1fr) 44px;
   margin-bottom: 0;
 }
 

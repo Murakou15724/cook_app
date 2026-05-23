@@ -56,6 +56,8 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     meal_plan = @user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
     meal_plan.person_tags << tag
     curry = meal_plan.plan_dishes.create!(name: "カレー", memo: "甘口", position: 0)
+    curry.dish_ingredients.create!(name: "玉ねぎ")
+    curry.dish_ingredients.create!(name: "にんじん")
     salad = meal_plan.plan_dishes.create!(name: "サラダ", memo: "別枠", position: 1)
 
     get meal_plans_path
@@ -63,7 +65,8 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".meal-tag-line", "家族"
     assert_select ".meal-edit-trigger h3", "カレー"
-    assert_select ".meal-edit-trigger p", /甘口/
+    assert_select ".meal-dish-detail", /玉ねぎ、にんじん/
+    assert_select ".meal-dish-detail", /甘口/
     assert_select ".edit-drawer"
 
     document = Nokogiri::HTML(response.body)
@@ -71,6 +74,8 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_includes curry_template, "dishes[#{curry.id}][name]"
     assert_includes curry_template, "献立名"
     assert_includes curry_template, "食材"
+    assert_includes curry_template, "add_to_shopping_list"
+    assert_includes curry_template, "買い物リストに追加"
     assert_includes curry_template, "メモ"
     assert_not_includes curry_template, "dishes[#{salad.id}][name]"
   end
@@ -237,6 +242,7 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     dish = meal_plan.plan_dishes.create!(name: "カレー", memo: "甘口", position: 0)
     onion = dish.dish_ingredients.create!(name: "たまねぎ", add_to_shopping_list: true)
     carrot = dish.dish_ingredients.create!(name: "にんじん", add_to_shopping_list: true)
+    daikon = dish.dish_ingredients.create!(name: "大根", add_to_shopping_list: false)
     onion_item = @user.shopping_items.create!(dish_ingredient: onion, name: "たまねぎ", manual: false)
     carrot_item = @user.shopping_items.create!(dish_ingredient: carrot, name: "にんじん", manual: false)
 
@@ -253,9 +259,10 @@ class MealPlansTest < ActionDispatch::IntegrationTest
             dish.id.to_s => { name: "カレー", memo: "甘口" }
           },
           ingredients: {
-            "existing_#{onion.id}" => { id: onion.id, name: "玉ねぎ", delete: "0" },
-            "existing_#{carrot.id}" => { id: carrot.id, name: "にんじん", delete: "1" },
-            "new_1" => { dish_id: dish.id, name: "じゃがいも" }
+            "existing_#{onion.id}" => { id: onion.id, name: "玉ねぎ", add_to_shopping_list: "1", delete: "0" },
+            "existing_#{carrot.id}" => { id: carrot.id, name: "にんじん", add_to_shopping_list: "1", delete: "1" },
+            "existing_#{daikon.id}" => { id: daikon.id, name: "大根", add_to_shopping_list: "1", delete: "0" },
+            "new_1" => { dish_id: dish.id, name: "じゃがいも", add_to_shopping_list: "0" }
           }
         }
       end
@@ -264,11 +271,13 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_equal "玉ねぎ", onion.reload.name
     assert_equal "玉ねぎ", onion_item.reload.name
+    assert daikon.reload.add_to_shopping_list?
+    assert @user.shopping_items.exists?(dish_ingredient: daikon, name: "大根")
     assert_not DishIngredient.exists?(carrot.id)
     assert_not ShoppingItem.exists?(carrot_item.id)
     assert_equal "たまねぎ", other_onion.reload.name
     assert_equal "たまねぎ", other_onion_item.reload.name
-    assert @user.shopping_items.exists?(dish_ingredient: dish.dish_ingredients.find_by!(name: "じゃがいも"))
+    assert_not @user.shopping_items.exists?(dish_ingredient: dish.dish_ingredients.find_by!(name: "じゃがいも"))
   end
 
   test "invalid update does not leave partial related data" do
