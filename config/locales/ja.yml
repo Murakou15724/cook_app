@@ -1,0 +1,60 @@
+ja:
+  activerecord:
+    models:
+      user: ユーザー
+      meal_plan: 献立
+      plan_dish: 料理
+      dish_ingredient: 食材
+      shopping_item: 買い物項目
+      cooking_record: 過去料理
+      person_tag: 人物タグ
+    attributes:
+      user:
+        email: メールアドレス
+        password: パスワード
+        password_confirmation: パスワード確認
+        role: 権限
+        nickname: ニックネーム
+      meal_plan:
+        meal_date: 日付
+        meal_type: 食事区分
+        migrated_at: 移行日時
+      plan_dish:
+        name: 料理名
+        memo: メモ
+        position: 表示順
+      dish_ingredient:
+        name: 食材名
+        add_to_shopping_list: 買い物追加
+      shopping_item:
+        name: 食材名
+        dish_ingredient: 食材
+        sort_order: 表示順
+      cooking_record:
+        name: 料理名
+        cooked_on: 食事日
+        meal_type: 食事区分
+        memo: メモ
+        eating_out: 外食
+        source_meal_plan_id: 元の献立
+        source_plan_dish_id: 元の料理
+      person_tag:
+        name: 人物名
+        default_selected: 初期選択
+      meal_plan_person_tag:
+        person_tag: 人物タグ
+        person_tag_id: 人物タグ
+      cooking_record_person_tag:
+        person_tag: 人物タグ
+        person_tag_id: 人物タグ
+  errors:
+    format: "%{attribute}%{message}"
+    messages:
+      blank: "を入力してください"
+      taken: "はすでに使用されています"
+      invalid: "は正しくありません"
+      too_short: "は%{count}文字以上で入力してください"
+      too_long: "は%{count}文字以内で入力してください"
+      wrong_length: "は%{count}文字で入力してください"
+      not_a_number: "は数値で入力してください"
+      greater_than_or_equal_to: "は%{count}以上にしてください"

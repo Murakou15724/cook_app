@@ -14,7 +14,6 @@
     <div class="app-shell">
       <header class="header">
         <div>
-          <p class="eyebrow">Cook Plan</p>
           <%= link_to "料理アプリ", logged_in? ? root_path : login_path, class: "brand" %>
         </div>
 
@@ -23,7 +22,7 @@
             <% if current_user.admin? %>
               <%= link_to "管理者ホーム", admin_root_path, class: "admin-chip" %>
             <% end %>
-            <%= link_to "全ページ", dev_pages_path, class: "ghost-button" %>
+            <%= link_to "画面一覧", dev_pages_path, class: "ghost-button" %>
             <%= button_to "ログアウト", logout_path, method: :delete, class: "link-button" %>
           </div>
         <% end %>

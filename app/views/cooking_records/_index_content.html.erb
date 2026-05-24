@@ -1,6 +1,5 @@
 <%= turbo_frame_tag "cooking_records", data: { controller: "cooking-records" } do %>
   <section class="page-title">
-    <p class="eyebrow">Records</p>
     <h1>過去料理一覧</h1>
     <p>料理名・メモ・人物タグで振り返ります。</p>
   </section>
@@ -38,7 +37,7 @@
         <div class="form-group">
           <div class="section-title compact">
             <h2>人物タグ</h2>
-            <span class="small-note">AND検索</span>
+            <span class="small-note">すべて含む</span>
           </div>
           <div class="chip-list filter-chip-list">
             <% @person_tags.each do |tag| %>

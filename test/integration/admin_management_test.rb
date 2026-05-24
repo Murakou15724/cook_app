@@ -54,7 +54,7 @@ class AdminManagementTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "body", /管理対象/
     assert_select "body", /#{Regexp.escape(@user.email)}/
-    assert_select "body", /password_digest/
+    assert_select "body", /パスワードハッシュ/
     assert_select "a[href='#{admin_users_path}']", "ユーザー管理へ戻る"
     assert_select "a[href='#{shopping_items_admin_user_path(@user)}']"
     assert_select "a[href='#{meal_plans_admin_user_path(@user)}']"

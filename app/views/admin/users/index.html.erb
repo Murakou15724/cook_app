@@ -1,5 +1,4 @@
 <section class="page-title">
-  <p class="eyebrow">Admin</p>
   <h1>ユーザー管理</h1>
 </section>
 
@@ -7,13 +6,13 @@
   <% @users.each do |user| %>
     <div class="dev-link-row">
       <span>
-        ID <%= link_to user.id, admin_user_path(user) %> /
+        ユーザーID <%= link_to user.id, admin_user_path(user) %> /
         <%= user.display_nickname %> /
         <%= user.email %> /
-        <%= user.role %>
+        <%= user.admin? ? "管理者" : "一般" %>
       </span>
       <%= button_to "削除", admin_user_path(user), method: :delete, class: "danger-button", data: { turbo_confirm: "本当に削除しますか？" } %>
     </div>
-    <p class="small-note">password_digest: <%= user.password_digest %></p>
+    <p class="small-note">パスワードハッシュ: <%= user.password_digest %></p>
   <% end %>
 </section>

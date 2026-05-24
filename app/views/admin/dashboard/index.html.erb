@@ -1,5 +1,4 @@
 <section class="page-title">
-  <p class="eyebrow">Admin</p>
   <h1>管理者ホーム</h1>
   <p>管理対象への導線です。</p>
 </section>
@@ -13,6 +12,6 @@
     ["買い物管理", admin_shopping_items_path],
     ["人物タグ管理", admin_person_tags_path]
   ].each do |label, path| %>
-    <div class="dev-link-row"><span><%= label %></span><%= link_to path, path %></div>
+    <div class="dev-link-row"><span><%= label %></span><%= link_to "開く", path %></div>
   <% end %>
 </section>

@@ -1,7 +1,6 @@
 <section class="page-title">
-  <p class="eyebrow">Admin</p>
   <h1>ユーザー詳細</h1>
-  <p>ID <%= @user.id %></p>
+  <p>ユーザーID <%= @user.id %></p>
 </section>
 
 <%= link_to "ユーザー管理へ戻る", admin_users_path, class: "secondary-button" %>
@@ -13,7 +12,7 @@
   <p><strong>メールアドレス</strong></p>
   <p><%= @user.email %></p>
   <p class="small-note">パスワードは復元できないため、ハッシュ値を表示します。</p>
-  <p><strong>password_digest</strong></p>
+  <p><strong>パスワードハッシュ</strong></p>
   <p class="small-note"><%= @user.password_digest %></p>
 </section>
 
