@@ -65,4 +65,8 @@ Rails.application.routes.draw do
   get "403", to: "errors#forbidden", as: :forbidden
   get "404", to: "errors#not_found", as: :not_found
   get "500", to: "errors#internal_server_error", as: :internal_server_error
+
+  # 定期アクセス用
+  get "/ping", to: proc { [200, { "Content-Type" => "text/plain" }, ["ok"]] }
+
 end
