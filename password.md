@@ -2,3 +2,6 @@
 
 - ユーザー名: `admin`
 - パスワード: `Keiog00d`
+
+/admin/signup
+

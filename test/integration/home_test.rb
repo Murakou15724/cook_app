@@ -40,6 +40,10 @@ class HomeTest < ActionDispatch::IntegrationTest
     assert_select ".meal-dish-detail", /玉ねぎ, にんじん/
     assert_select ".meal-dish-detail", /甘口/
     assert_select ".page-title.with-action a.title-action", "献立を作成"
+    assert_select ".user-greeting .greeting-name", "#{@user.display_nickname} さん"
+    assert_select ".user-greeting .greeting-text", "こんにちは！"
+    assert_select ".header a[href='#{logout_path}'][data-turbo-method='delete']", "ログアウト"
+    assert_select ".header form[action='#{logout_path}']", 0
     assert_select ".quick-actions a", { text: "買い物リスト", count: 0 }
     assert_select ".quick-actions a", { text: "プロフィール", count: 0 }
     assert_select "body", { text: /他人の料理/, count: 0 }
@@ -54,14 +58,17 @@ class HomeTest < ActionDispatch::IntegrationTest
     assert_select ".empty-state", { text: "未登録", count: 2 }
   end
 
-  test "shows admin entry only for admin users" do
+  test "shows screen list only for admin users and keeps admin home out of header" do
     post login_path, params: { email: @user.email, password: "password1" }
     follow_redirect!
     assert_select ".admin-chip", { count: 0 }
+    assert_select ".header a", { text: "画面一覧", count: 0 }
+    assert_select ".header a", { text: "管理者ホーム", count: 0 }
 
     delete logout_path
     admin = User.create!(
       email: "admin-home@example.com",
+      nickname: "管理者",
       password: "password1",
       password_confirmation: "password1",
       role: :admin
@@ -69,6 +76,9 @@ class HomeTest < ActionDispatch::IntegrationTest
     post login_path, params: { email: admin.email, password: "password1" }
     follow_redirect!
 
-    assert_select ".header .admin-chip", "管理者ホーム"
+    assert_select ".user-greeting .greeting-name", "管理者 さん"
+    assert_select ".user-greeting .greeting-text", "こんにちは！"
+    assert_select ".header a", "画面一覧"
+    assert_select ".header a", { text: "管理者ホーム", count: 0 }
   end
 end

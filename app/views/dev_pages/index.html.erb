@@ -5,6 +5,24 @@
 
 <div class="dev-grid">
   <section class="card">
+    <div class="section-title"><h2>管理者・エラー</h2></div>
+    <% [
+      ["管理者新規登録", admin_signup_path],
+      ["管理者ホーム", admin_root_path],
+      ["ユーザー管理", admin_users_path],
+      ["献立管理", admin_meal_plans_path],
+      ["過去料理管理", admin_cooking_records_path],
+      ["買い物管理", admin_shopping_items_path],
+      ["人物タグ管理", admin_person_tags_path],
+      ["403", forbidden_path],
+      ["404", not_found_path],
+      ["500", internal_server_error_path]
+    ].each do |label, path| %>
+      <div class="dev-link-row"><span><%= label %></span><%= link_to "開く", path %></div>
+    <% end %>
+  </section>
+
+  <section class="card">
     <div class="section-title"><h2>一般画面</h2></div>
     <% [
       ["ホーム", root_path],
@@ -56,23 +74,5 @@
       <span>管理者ユーザー別過去料理一覧</span>
       <% if @admin_user %><%= link_to cooking_records_admin_user_path(@admin_user), cooking_records_admin_user_path(@admin_user) %><% else %><span class="small-note">/admin/users/:id/cooking_records</span><% end %>
     </div>
-  </section>
-
-  <section class="card">
-    <div class="section-title"><h2>管理者・エラー</h2></div>
-    <% [
-      ["管理者新規登録", admin_signup_path],
-      ["管理者ホーム", admin_root_path],
-      ["ユーザー管理", admin_users_path],
-      ["献立管理", admin_meal_plans_path],
-      ["過去料理管理", admin_cooking_records_path],
-      ["買い物管理", admin_shopping_items_path],
-      ["人物タグ管理", admin_person_tags_path],
-      ["403", forbidden_path],
-      ["404", not_found_path],
-      ["500", internal_server_error_path]
-    ].each do |label, path| %>
-      <div class="dev-link-row"><span><%= label %></span><%= link_to "開く", path %></div>
-    <% end %>
   </section>
 </div>

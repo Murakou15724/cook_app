@@ -13,17 +13,22 @@
   <body>
     <div class="app-shell">
       <header class="header">
-        <div>
+        <div class="header-brand-row">
           <%= link_to "料理アプリ", logged_in? ? root_path : login_path, class: "brand" %>
+          <% if logged_in? %>
+            <span class="user-greeting">
+              <span class="greeting-name"><%= current_user.display_nickname %> さん</span>
+              <span class="greeting-text">こんにちは！</span>
+            </span>
+          <% end %>
         </div>
 
         <% if logged_in? %>
           <div class="header-actions">
             <% if current_user.admin? %>
-              <%= link_to "管理者ホーム", admin_root_path, class: "admin-chip" %>
+              <%= link_to "画面一覧", dev_pages_path, class: "ghost-button" %>
             <% end %>
-            <%= link_to "画面一覧", dev_pages_path, class: "ghost-button" %>
-            <%= button_to "ログアウト", logout_path, method: :delete, class: "link-button" %>
+            <%= link_to "ログアウト", logout_path, data: { turbo_method: :delete }, class: "link-button" %>
           </div>
         <% end %>
       </header>
