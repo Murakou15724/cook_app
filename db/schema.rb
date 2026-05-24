@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_24_010200) do
+ActiveRecord::Schema[7.1].define(version: 2026_05_24_020100) do
   create_table "cooking_record_person_tags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "cooking_record_id", null: false
     t.bigint "person_tag_id", null: false
@@ -86,6 +86,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_24_010200) do
     t.check_constraint "`meal_type` in (0,1)", name: "chk_meal_plans_meal_type"
   end
 
+  create_table "passkeys", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "external_id", null: false
+    t.text "public_key", null: false
+    t.string "nickname", null: false
+    t.integer "sign_count", default: 0, null: false
+    t.datetime "last_used_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["external_id"], name: "index_passkeys_on_external_id", unique: true
+    t.index ["user_id"], name: "index_passkeys_on_user_id"
+  end
+
   create_table "person_tags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "user_id", null: false
     t.string "name", null: false
@@ -147,10 +160,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_24_010200) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "nickname"
+    t.string "webauthn_id"
     t.index ["created_at"], name: "index_users_on_created_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["nickname"], name: "index_users_on_nickname"
     t.index ["role"], name: "index_users_on_role"
+    t.index ["webauthn_id"], name: "index_users_on_webauthn_id", unique: true
     t.check_constraint "`role` in (0,1)", name: "chk_users_role"
   end
 
@@ -163,6 +178,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_24_010200) do
   add_foreign_key "meal_plan_person_tags", "meal_plans"
   add_foreign_key "meal_plan_person_tags", "person_tags"
   add_foreign_key "meal_plans", "users"
+  add_foreign_key "passkeys", "users"
   add_foreign_key "person_tags", "users"
   add_foreign_key "plan_dishes", "meal_plans"
   add_foreign_key "shopping_items", "dish_ingredients"

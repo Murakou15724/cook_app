@@ -11,6 +11,10 @@ Rails.application.routes.draw do
   get "login", to: "sessions#new", as: :login
   post "login", to: "sessions#create"
   delete "logout", to: "sessions#destroy", as: :logout
+  post "passkey/login/options", to: "passkey_sessions#options", as: :passkey_login_options
+  post "passkey/login", to: "passkey_sessions#create", as: :passkey_login
+  post "passkeys/options", to: "passkey_registrations#options", as: :passkey_registration_options
+  post "passkeys", to: "passkey_registrations#create", as: :passkeys
 
   resource :profile, only: [:edit, :update]
   get "settings", to: "settings#show", as: :settings

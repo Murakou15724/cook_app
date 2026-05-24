@@ -68,7 +68,9 @@ class AuthenticationFlowTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "form[autocomplete='off']"
     assert_select "input[name='email'][autocomplete='off']"
-    assert_select "input[name='password'][autocomplete='off']"
+    assert_select "input[name='password'][autocomplete='off'][type='password']"
+    assert_select "button[data-action='password-visibility#toggle']", "表示"
+    assert_select "button[data-action='passkey#login']", "パスキーでログイン"
     assert_select "a", { text: /パスワード/, count: 0 }
 
     post login_path, params: { email: "none@example.com", password: "password1" }

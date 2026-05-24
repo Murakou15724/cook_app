@@ -7,9 +7,11 @@ class User < ApplicationRecord
   has_many :shopping_items, dependent: :destroy
   has_many :cooking_records, dependent: :destroy
   has_many :person_tags, dependent: :destroy
+  has_many :passkeys, dependent: :destroy
 
   before_validation :normalize_email
   before_validation :normalize_nickname
+  before_validation :ensure_webauthn_id
   after_create :assign_default_nickname!
   before_destroy :ensure_another_admin_remains
 
@@ -23,9 +25,14 @@ class User < ApplicationRecord
   validates :password_confirmation, presence: true, if: -> { password.present? }
   validates :role, presence: true
   validates :nickname, length: { maximum: 20 }, allow_blank: true
+  validates :webauthn_id, presence: true, uniqueness: true
 
   def display_nickname
     nickname.presence || default_nickname
+  end
+
+  def ensure_webauthn_id
+    self.webauthn_id ||= WebAuthn.generate_user_id
   end
 
   private

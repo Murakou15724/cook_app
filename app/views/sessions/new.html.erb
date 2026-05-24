@@ -3,18 +3,40 @@
   <p>登録済みのメールアドレスとパスワードを入力してください。</p>
 </section>
 
-<%= form_with url: login_path, class: "form-card", html: { autocomplete: "off" } do |form| %>
-  <div class="field">
-    <%= form.label :email, "メールアドレス" %>
-    <%= form.email_field :email, autocomplete: "off", required: true %>
-  </div>
+<section data-controller="passkey"
+         data-passkey-login-options-url-value="<%= passkey_login_options_path %>"
+         data-passkey-login-url-value="<%= passkey_login_path %>">
+  <%= form_with url: login_path, class: "form-card", html: { autocomplete: "off" } do |form| %>
+    <div class="field">
+      <%= form.label :email, "メールアドレス" %>
+      <%= form.email_field :email, autocomplete: "off", required: true, data: { passkey_target: "email" } %>
+    </div>
 
-  <div class="field">
-    <%= form.label :password, "パスワード" %>
-    <%= form.password_field :password, autocomplete: "off", required: true %>
-  </div>
+    <div class="field" data-controller="password-visibility">
+      <%= form.label :password, "パスワード" %>
+      <div class="password-input-row">
+        <%= form.password_field :password, autocomplete: "off", required: true, data: { password_visibility_target: "input" } %>
+        <button type="button"
+                class="secondary-button password-toggle-button"
+                data-password-visibility-target="button"
+                data-action="password-visibility#toggle"
+                aria-pressed="false">表示</button>
+      </div>
+    </div>
 
-  <%= form.submit "ログイン", class: "primary-button" %>
-<% end %>
+    <%= form.submit "ログイン", class: "primary-button full-width" %>
+  <% end %>
+
+  <section class="card passkey-card">
+    <div class="section-title">
+      <h2>パスキー</h2>
+    </div>
+    <p class="small-note">Face ID、Touch ID、Windows Hello など、端末の認証機能でログインできます。</p>
+    <button type="button"
+            class="secondary-button full-width"
+            data-action="passkey#login">パスキーでログイン</button>
+    <p class="small-note passkey-status" data-passkey-target="status" aria-live="polite"></p>
+  </section>
+</section>
 
 <p class="auth-link"><%= link_to "新規登録はこちら", signup_path %></p>

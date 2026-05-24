@@ -349,6 +349,28 @@ a {
   margin-bottom: 10px;
 }
 
+.password-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.password-toggle-button {
+  min-width: 64px;
+  min-height: 44px;
+  padding: 0 10px;
+}
+
+.passkey-card {
+  margin-top: 12px;
+}
+
+.passkey-status {
+  min-height: 1.4em;
+  margin-top: 8px;
+}
+
 .manual-add-card {
   padding: 10px;
 }

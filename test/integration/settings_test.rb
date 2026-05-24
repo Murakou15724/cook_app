@@ -19,6 +19,7 @@ class SettingsTest < ActionDispatch::IntegrationTest
     assert_select ".dev-link-row span", "人物タグ設定"
     assert_select "a[href='#{edit_profile_path}']", { text: "開く", count: 1 }
     assert_select "a[href='#{person_tags_path}']", { text: "開く", count: 1 }
+    assert_select "button[data-action='passkey#register']", "パスキーを登録"
   end
 
   test "bottom nav uses settings instead of tag" do

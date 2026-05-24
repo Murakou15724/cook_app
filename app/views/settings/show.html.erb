@@ -14,6 +14,28 @@
   </div>
 </section>
 
+<section class="card"
+         data-controller="passkey"
+         data-passkey-registration-options-url-value="<%= passkey_registration_options_path %>"
+         data-passkey-registration-url-value="<%= passkeys_path %>">
+  <div class="section-title">
+    <h2>パスキー</h2>
+  </div>
+
+  <p class="small-note">端末の生体認証やPINを使ってログインできます。顔写真や指紋データは保存しません。</p>
+  <button type="button"
+          class="secondary-button full-width"
+          data-action="passkey#register">パスキーを登録</button>
+  <p class="small-note passkey-status" data-passkey-target="status" aria-live="polite"></p>
+
+  <% if @passkeys.any? %>
+    <div class="dev-link-row">
+      <span>登録済み</span>
+      <span><%= @passkeys.count %>件</span>
+    </div>
+  <% end %>
+</section>
+
 <section class="card">
   <div class="section-title">
     <h2>タグ設定</h2>
