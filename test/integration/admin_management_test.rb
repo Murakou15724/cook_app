@@ -53,7 +53,7 @@ class AdminManagementTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "body", /管理対象/
-    assert_select "body", @user.email
+    assert_select "body", /#{Regexp.escape(@user.email)}/
     assert_select "body", /password_digest/
     assert_select "a[href='#{admin_users_path}']", "ユーザー管理へ戻る"
     assert_select "a[href='#{shopping_items_admin_user_path(@user)}']"
@@ -79,9 +79,8 @@ class AdminManagementTest < ActionDispatch::IntegrationTest
   test "admin cannot edit users but can delete users" do
     post login_path, params: { email: @admin.email, password: "password1" }
 
-    assert_raises(ActionController::RoutingError) do
-      get "/admin/users/#{@user.id}/edit"
-    end
+    get "/admin/users/#{@user.id}/edit"
+    assert_response :not_found
 
     assert_difference -> { User.count }, -1 do
       delete admin_user_path(@user)

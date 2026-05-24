@@ -51,7 +51,7 @@ class HomeTest < ActionDispatch::IntegrationTest
 
     assert_select ".meal-label", "昼食"
     assert_select ".meal-label", "夕食"
-    assert_select ".empty-state", "未登録", count: 2
+    assert_select ".empty-state", { text: "未登録", count: 2 }
   end
 
   test "shows admin entry only for admin users" do

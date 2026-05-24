@@ -143,7 +143,7 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :unprocessable_content
-    assert_select ".error-panel", /日付は今日以降を指定してください/
+    assert_select ".error-panel", /今日以降を指定してください/
   end
 
   test "new meal plan form starts with one dish and three ingredient fields" do

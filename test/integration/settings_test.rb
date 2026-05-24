@@ -17,8 +17,8 @@ class SettingsTest < ActionDispatch::IntegrationTest
     assert_select "h1", "設定ページ"
     assert_select ".dev-link-row span", "プロフィール編集"
     assert_select ".dev-link-row span", "人物タグ設定"
-    assert_select "a[href='#{edit_profile_path}']", "開く", count: 1
-    assert_select "a[href='#{person_tags_path}']", "開く", count: 1
+    assert_select "a[href='#{edit_profile_path}']", { text: "開く", count: 1 }
+    assert_select "a[href='#{person_tags_path}']", { text: "開く", count: 1 }
   end
 
   test "bottom nav uses settings instead of tag" do
