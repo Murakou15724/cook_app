@@ -7,9 +7,10 @@ class AddDatabaseDesignConstraints < ActiveRecord::Migration[7.1]
     add_check_constraint :meal_plans,
                          "meal_type IN (0, 1)",
                          name: "chk_meal_plans_meal_type"
+
     add_check_constraint :meal_plans,
-                         "((migrated = 0 AND migrated_at IS NULL) OR (migrated = 1 AND migrated_at IS NOT NULL))",
-                         name: "chk_meal_plans_migrated_at"
+                        "((migrated IS FALSE AND migrated_at IS NULL) OR (migrated IS TRUE AND migrated_at IS NOT NULL))",
+                        name: "chk_meal_plans_migrated_at"
 
     add_check_constraint :plan_dishes,
                          "CHAR_LENGTH(TRIM(name)) > 0",
