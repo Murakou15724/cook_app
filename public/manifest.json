@@ -2,6 +2,7 @@
   "name": "料理アプリ",
   "short_name": "料理",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f8f5ef",
   "theme_color": "#f8f5ef",
