@@ -2,9 +2,9 @@ name: Keep Render Alive
 
 on:
   schedule:
-    # JST 6:00〜23:52 = UTC 21:00〜14:52
-    - cron: "*/13 21-23 * * *"
-    - cron: "*/13 0-14 * * *"
+    # JST 6:00〜23:50 = UTC 21:00〜14:50
+    - cron: "*/10 21-23 * * *"
+    - cron: "*/10 0-14 * * *"
   workflow_dispatch:
 
 jobs:
