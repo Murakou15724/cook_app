@@ -5,11 +5,11 @@
 
 <%= render "shared/error_messages", object: @meal_plan %>
 
-<%= form_with url: meal_plan_path(@meal_plan), method: :patch, class: "form-card", html: { autocomplete: "off" }, data: { controller: "meal-plan-form" } do |form| %>
+<%= form_with url: meal_plan_path(@meal_plan), method: :patch, class: "form-card", html: { autocomplete: "off" }, data: { controller: "meal-plan-form", meal_plan_form_allow_empty_dishes_value: true, meal_plan_form_confirm_dish_removal_value: true } do |form| %>
   <div class="meal-plan-basic-fields">
     <div class="form-group">
       <%= form.label :meal_date, "日付" %>
-      <%= form.date_field :meal_date, value: @meal_plan.meal_date, autocomplete: "off" %>
+      <%= form.date_field :meal_date, value: @meal_plan.meal_date, min: Date.current, autocomplete: "off" %>
     </div>
 
     <div class="form-group">
@@ -24,9 +24,10 @@
   <div data-meal-plan-form-target="dishes">
     <% @dish_inputs.each_with_index do |dish, index| %>
       <section class="dish-card" data-meal-plan-form-target="dish" data-dish-index="<%= index %>">
+        <%= hidden_field_tag "dishes[#{index}][id]", dish["id"] if dish["id"].present? %>
         <div class="section-title">
           <h2>料理 <span data-meal-plan-form-target="dishNumber"><%= index + 1 %></span></h2>
-          <button type="button" class="danger-icon-button" data-meal-plan-form-target="removeDishButton" data-action="meal-plan-form#removeDish" <%= "hidden" if index.zero? %>>削除</button>
+          <button type="button" class="danger-icon-button" data-meal-plan-form-target="removeDishButton" data-action="meal-plan-form#removeDish">削除</button>
         </div>
         <div class="form-group">
           <%= label_tag "dishes_#{index}_name", "料理名" %>
@@ -41,6 +42,7 @@
             <% dish.fetch("ingredients", []).each_with_index do |ingredient, ingredient_index| %>
               <div class="ingredient-field" data-meal-plan-form-target="ingredient">
                 <button type="button" class="danger-icon-button" aria-label="食材を削除" data-action="meal-plan-form#removeIngredient">-</button>
+                <%= hidden_field_tag "dishes[#{index}][ingredients][#{ingredient_index}][id]", ingredient["id"] if ingredient["id"].present? %>
                 <%= text_field_tag "dishes[#{index}][ingredients][#{ingredient_index}][name]", ingredient["name"], id: "dishes_#{index}_ingredients_#{ingredient_index}_name", autocomplete: "off", data: { action: "input->meal-plan-form#syncIngredientCheck" } %>
                 <label class="inline-check">
                   <%= hidden_field_tag "dishes[#{index}][ingredients][#{ingredient_index}][add_to_shopping_list]", "0" %>
@@ -59,7 +61,7 @@
     <% end %>
   </div>
 
-  <button type="button" class="secondary-button full-width" data-action="meal-plan-form#addDish">料理を追加</button>
+  <button type="button" class="secondary-button full-width" data-meal-plan-form-target="addDishButton" data-action="meal-plan-form#addDish">料理を追加</button>
 
   <template data-meal-plan-form-target="dishTemplate">
     <section class="dish-card" data-meal-plan-form-target="dish" data-dish-index="__DISH_INDEX__">
