@@ -6,7 +6,7 @@
 
 - **主要コード**: 最初に読むべき入口
 - **影響先**: 変更で壊れやすい関連領域
-- **テスト候補**: 既存テストの入口。2026-07-25時点ではMySQL接続不能のため全68件は未実行
+- **テスト候補**: 既存テストの入口。2026-07-26にはRails test全86件と通常編集のSystem test 4件が成功しているが、変更時は対象差分に合わせて再実行する
 
 ## 2. 機能別マップ
 
@@ -17,11 +17,11 @@
 | パスキー登録 | `app/controllers/passkey_registrations_controller.rb:4-43`、`app/models/passkey.rb:1-9` | WebAuthn challenge、credential保存、settings画面 | `test/integration/passkeys_test.rb`、`test/models/passkey_test.rb` |
 | パスキーログイン | `app/controllers/passkey_sessions_controller.rb:4-42` | session、sign_count、last_used_at、通常ログイン画面 | `test/integration/passkeys_test.rb` |
 | member/admin権限 | `app/controllers/application_controller.rb:14-28`、`app/controllers/admin/base_controller.rb:1-5`、`app/models/user.rb:4` | 全認証必須画面、admin namespace | `test/integration/admin_management_test.rb`、`test/integration/authentication_flow_test.rb` |
-| 献立一覧・作成 | `app/controllers/meal_plans_controller.rb:2-45,93-98,236-266` | PlanDish、DishIngredient、ShoppingItem、PersonTag | `test/integration/meal_plans_test.rb`、`test/models/meal_plan_test.rb`、`test/integration/shopping_items_test.rb` |
-| 献立の通常編集 | `app/controllers/meal_plans_controller.rb:53-80,236-266` | 子の全削除・再作成、生成済み買い物項目、ID参照 | `test/integration/meal_plans_test.rb`、`test/integration/shopping_items_test.rb` |
-| 献立のquick edit | `app/controllers/meal_plans_controller.rb:100-210` | 個別DishIngredient、ShoppingItem同期、Turbo Stream | `test/integration/meal_plans_test.rb`、`test/integration/shopping_items_test.rb` |
-| 料理並び替え | `app/controllers/meal_plans_controller.rb:87-89` | 現在はstub。PlanDish.positionの実動作なし | 追加テストが必要 |
-| 買い物項目の自動生成 | `app/controllers/meal_plans_controller.rb:250-262`、`app/models/shopping_item.rb:1-12` | 食材のadd_to_shopping_list、manual/source整合 | `test/integration/meal_plans_test.rb`、`test/integration/shopping_items_test.rb` |
+| 献立一覧・作成 | `MealPlansController#index`, `#create`, `#prepare_index_state`, `#save_meal_plan!` | PlanDish、DishIngredient、ShoppingItem、PersonTag | `test/integration/meal_plans_test.rb`、`test/models/meal_plan_test.rb`、`test/integration/shopping_items_test.rb` |
+| 献立の通常編集 | `MealPlansController#update`, `#sync_full_update!`, `#validate_full_update_ids!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`、`app/views/meal_plans/edit.html.erb` | active/owner scope、nested ID、未変更ID・timestamp、料理位置、ShoppingItem、PersonTag join、CookingRecord、削除UI | `test/integration/meal_plans_test.rb`、`test/system/meal_plan_edit_test.rb`、`test/integration/shopping_items_test.rb` |
+| 献立のquick edit | `MealPlansController#quick_update`, `#sync_quick_ingredients!`, `#sync_shopping_item_for_quick_ingredient!` | 個別DishIngredient、ShoppingItem同期、Turbo Stream | `test/integration/meal_plans_test.rb`、`test/integration/shopping_items_test.rb` |
+| 料理並び替え | `MealPlansController#move_dish` | 現在はstub。PlanDish.positionの実動作なし | 追加テストが必要 |
+| 買い物項目の自動生成・通常編集同期 | `MealPlansController#create_shopping_item_for_full_ingredient!`, `#sync_existing_full_ingredient!`, `#destroy_shopping_items_for_full_ingredient!`、`app/models/shopping_item.rb:1-12` | 食材のadd_to_shopping_list、名称、購入状態、sort_order、manual/source整合 | `test/integration/meal_plans_test.rb`、`test/integration/shopping_items_test.rb` |
 | 手動買い物項目 | `app/controllers/shopping_items_controller.rb:16-17` | manual=true、dish_ingredientなし、並び順、購入状態 | `test/integration/shopping_items_test.rb` |
 | 買い物項目の更新・削除 | `app/controllers/shopping_items_controller.rb:33-68,112-114` | 対象IDのみ、購入済み一括削除、Turbo表示 | `test/integration/shopping_items_test.rb` |
 | 人物タグ | `app/controllers/person_tags_controller.rb:1-44`、`app/models/person_tag.rb:1-10` | 献立・料理履歴の中間テーブル、user境界 | `test/integration/person_tags_test.rb`、`test/models/person_tag_test.rb` |
@@ -50,7 +50,8 @@ flowchart LR
 
 根拠:
 
-- 献立から料理・食材・買い物項目の生成: `app/controllers/meal_plans_controller.rb:236-266`
+- 献立作成時の料理・食材・買い物項目生成: `MealPlansController#save_meal_plan!`
+- 献立通常編集時の差分同期: `MealPlansController#sync_full_update!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`, `#sync_existing_full_ingredient!`
 - 過去献立からCookingRecordへの移行: `app/controllers/application_controller.rb:30-56`
 - 外部キー: `db/schema.rb:172-185`
 
@@ -58,22 +59,26 @@ flowchart LR
 
 ### 4.1 献立通常編集
 
-通常編集は既存の`plan_dishes`を全削除し、送信内容から子を再作成する（`app/controllers/meal_plans_controller.rb:236-264`）。そのため、子IDの維持を前提にした機能、関連するShoppingItem、既存CookingRecordとの参照に影響し得る。
+通常編集はフォームのhidden `PlanDish.id` / `DishIngredient.id`を使い、1 transaction内で既存レコードを差分同期する。未変更レコードは保存せず、新規料理は存続する最大`position`の後へ追加する（`MealPlansController#sync_full_update!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`）。
 
 確認対象:
 
-- 削除対象のShoppingItemが意図どおり連動するか
-- 購入済み状態を保持する要件があるか
-- 既に移行済みのCookingRecordへの参照に影響しないか
-- transaction失敗時に全体がrollbackされるか
+- ownerかつactiveの献立だけがGET/PATCH可能であること
+- nested IDの対象献立・料理scope、不正shape、重複IDをmutation前に拒否すること
+- 変更しないPlanDish、DishIngredient、ShoppingItem、人物タグjoinのID・timestamp・業務属性を保持すること
+- ShoppingItemの無変更、名称変更、無効から有効、有効から無効、食材・料理削除の各状態遷移
+- 削除予定料理にCookingRecordがある場合は422で全変更を拒否し、CookingRecordを変更しないこと
+- 料理0件、空欄、過去日、日付・食事区分重複、途中失敗で全体がrollbackされること
+- quick edit drawerから通常編集を`_top`で開けること
+- 削除確認Cancel時のDOM保持、削除後focus、keyboard、日付最小値、320px幅
 
 ### 4.2 quick edit
 
-quick editは食材ごとに作成・更新・削除し、`add_to_shopping_list`に応じてShoppingItemを同期する（`app/controllers/meal_plans_controller.rb:100-110,160-210`）。通常編集とは更新方式が異なるため、両方の経路を別々に検証する。
+quick editは食材ごとに作成・更新・削除し、`add_to_shopping_list`に応じてShoppingItemを同期する（`MealPlansController#quick_update`, `#sync_quick_ingredients!`）。通常編集とは入力shapeと同期処理が異なるため、両方の経路を別々に検証する。同じ献立への並行full/quick updateの競合結果は未確認である。
 
 ### 4.3 過去献立移行
 
-Homeのindex、MealPlansのindex、CookingRecordsのindexに対するGETのbefore_actionで、過去献立をCookingRecordへ書き込む（`app/controllers/home_controller.rb:2-3`、`app/controllers/meal_plans_controller.rb:2-3`、`app/controllers/cooking_records_controller.rb:2-3`、`app/controllers/application_controller.rb:30-56`）。
+Homeのindex、MealPlansのindex、CookingRecordsのindexに対するGETのbefore_actionで、`ApplicationController#migrate_past_meal_plans!`を呼び、過去献立をCookingRecordへ書き込む。
 
 変更時は、冪等性、同時アクセス、途中失敗時のrollback、移行後フラグを確認する。
 
@@ -93,4 +98,6 @@ development / test はMySQLであり、schemaにはMySQL固有表現のcheck con
 - development/testのMySQLとproduction DBの差
 - routes、画面リンク、Stimulus controller
 - 既存Minitestと追加すべきテスト
+- 未変更レコードへの不要なwriteと、position・購入metadataの保持
+- production相当データ量での性能、並行更新、実端末差
 - Job/Mailer/Cableを実装済みと誤認していないか

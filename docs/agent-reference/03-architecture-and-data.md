@@ -74,7 +74,7 @@ sequenceDiagram
 
 - 管理 namespace の通常画面は、ログイン済みかつ `User#admin?` を必要とする。`app/controllers/admin/base_controller.rb:1-5`; `app/controllers/application_controller.rb:24-28`
 - 管理者新規登録は `Admin::BaseController` を継承せず、固定 Basic 認証と未ログイン条件を使用する。認証値は本資料に記載しない。`app/controllers/admin/registrations_controller.rb:2-4`
-- 一般ユーザー向けデータ操作は、原則 `current_user` の関連から対象を取得し、他ユーザー ID を 404 にする。例: `MealPlansController#set_meal_plan` (`app/controllers/meal_plans_controller.rb:124-126`)、`ShoppingItemsController#set_shopping_item` (`app/controllers/shopping_items_controller.rb:93-95`)
+- 一般ユーザー向けデータ操作は、原則 `current_user` の関連から対象を取得し、他ユーザー ID を 404 にする。例: `MealPlansController#set_meal_plan`, `#set_editable_meal_plan`（`app/controllers/meal_plans_controller.rb`）、`ShoppingItemsController#set_shopping_item` (`app/controllers/shopping_items_controller.rb:93-95`)
 
 ## 3. 主要処理フロー
 
@@ -99,11 +99,45 @@ flowchart TD
     L --> M[献立一覧へ redirect]
 ```
 
-根拠: `app/controllers/meal_plans_controller.rb:16-45,146-148,236-266`
+根拠: `MealPlansController#create`, `#selected_person_tag_ids`, `#save_meal_plan!`（`app/controllers/meal_plans_controller.rb`）
 
-通常編集は同じ保存処理を `replace_existing: true` で呼び、既存の料理以下を全削除して再作成する。quick edit は別処理で ID 単位に同期する。詳細は [02-functional-specification.md](02-functional-specification.md#43-通常献立編集と-quick-edit-の違い) を参照する。
+通常編集は作成用の`save_meal_plan!`を再利用せず、hidden IDに基づく差分同期を行う。quick editも別処理でID単位に同期する。詳細は [02-functional-specification.md](02-functional-specification.md#43-通常献立編集と-quick-edit-の違い) を参照する。
 
-### 3.2 GET 時の過去献立履歴化
+### 3.2 通常献立編集の差分同期
+
+```mermaid
+flowchart TD
+    A[通常編集フォームを送信] --> B[Strong Parametersとcollection形を検証]
+    B --> C{0件・空欄・過去日・重複IDか}
+    C -- はい --> X[422で再表示・変更なし]
+    C -- いいえ --> D[transaction開始・active献立をlock]
+    D --> E{nested IDは対象献立・料理の所有範囲内か}
+    E -- いいえ --> Y[404・rollback]
+    E -- はい --> F{削除予定料理にCookingRecordがあるか}
+    F -- はい --> X
+    F -- いいえ --> G[献立・人物タグを必要時だけ更新]
+    G --> H[既存料理・食材・ShoppingItemを必要時だけ更新]
+    H --> I[新規料理・食材・必要なShoppingItemを追加]
+    I --> J[送信から除かれた食材・料理と紐づく項目を削除]
+    J --> L[commit]
+```
+
+`MealPlansController#set_editable_meal_plan`は、通常編集とquick editを含むupdate対象をログインユーザー所有かつ`active`（未移行）に限定する。`#validate_full_update_ids!`は料理IDを対象献立内、食材IDを対象料理内に限定してからmutationへ進む。
+
+`#update_record_if_changed!`と`#sync_person_tags_for_full_update!`は未変更レコードへの保存を避ける。既存の料理・食材・買い物項目・人物タグjoinは、変更がなければID、timestamp、並び順、購入状態等を保持する。新規料理は存続する料理の最大`position`より後へ連番で追加される。
+
+ShoppingItemの同期は`#sync_existing_full_ingredient!`が担当する。
+
+- 食材の名称と追加指定が不変: 書き込まない。
+- 追加指定が有効のまま名称変更: 紐づく項目の名称だけ更新し、購入状態等を保持する。
+- 無効から有効: 既存項目を再利用し、なければ未購入項目を作成する。
+- 有効から無効、食材削除、料理削除: 購入済みを含む紐づく項目を削除する。
+
+削除予定料理を参照する`CookingRecord`がある場合、`#reject_cooking_record_dish_deletion!`がmutation前に422で拒否する。関連modelの`dependent`定義は変更していない。
+
+根拠: `MealPlansController#full_update_params`, `#validated_update_collection`, `#validate_full_update_input!`, `#sync_full_update!`, `#validate_full_update_ids!`, `#reject_cooking_record_dish_deletion!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`, `#sync_existing_full_ingredient!`; `test/integration/meal_plans_test.rb`
+
+### 3.3 GET 時の過去献立履歴化
 
 ```mermaid
 flowchart TD
@@ -123,7 +157,7 @@ flowchart TD
     L --> C
 ```
 
-根拠: `app/controllers/application_controller.rb:30-56`; 呼び出し元 `app/controllers/home_controller.rb:2-3`, `app/controllers/meal_plans_controller.rb:2-3`, `app/controllers/cooking_records_controller.rb:2-3`
+根拠: `ApplicationController#migrate_past_meal_plans!`; 呼び出し元は`HomeController`, `MealPlansController`, `CookingRecordsController`のbefore_action宣言
 
 注意: 読み取りに見える GET が DB 書き込みを行う。監視、cache、再試行、読み取り専用 replica を検討するときはこの性質を考慮する。
 
@@ -272,14 +306,15 @@ erDiagram
 
 - `db/schema.rb:172-185` の foreign key には `ON DELETE CASCADE` の指定が見当たらない。DB へ直接 DELETE する場合、Rails の削除連鎖と同じ結果になるとは限らない。
 - 献立・料理を削除すると、それを source とする過去料理も Rails 関連により削除される。履歴保持要件を変更する場合は、関連定義と管理・一般の削除経路を同時に見直す。
-- 通常献立編集は既存料理を `destroy_all` して再作成するため、関連食材と買い物項目も削除・再作成される。`app/controllers/meal_plans_controller.rb:236-265`
+- 通常献立編集は料理・食材をIDで差分同期する。削除予定料理を参照する`CookingRecord`がある場合は、Railsの削除連鎖を実行する前に更新全体を拒否する。`MealPlansController#sync_full_update!`, `#reject_cooking_record_dish_deletion!`
 - 最後の管理者は `before_destroy` で削除を中止する。`app/models/user.rb:16,59-65`
 
 ## 7. transaction と冪等性
 
 | 処理 | transaction | 冪等性・整合性 |
 |---|---|---|
-| 献立作成・通常編集 | あり | 失敗時は関連作成・全置換を rollback |
+| 献立作成 | あり | 失敗時は関連作成をrollback |
+| 献立通常編集 | あり | active献立をlockし、所有scope・入力をmutation前に検証。ID差分同期に失敗した場合は全体をrollbackし、同一内容の再送では対象グラフへ書き込まない |
 | quick edit | あり | 対象 ID を meal plan 内に scope。処理自体は同じ入力の再実行を想定した専用 API ではない |
 | 過去献立の履歴化 | 献立単位であり | `source_plan_dish_id` の存在確認と unique index で重複を防ぐ |
 | 過去料理 + 人物タグ保存 | あり | 保存失敗時に false を返して画面再表示 |
@@ -287,8 +322,9 @@ erDiagram
 
 根拠:
 
-- `MealPlansController#save_meal_plan!`: `app/controllers/meal_plans_controller.rb:236-266`
-- `MealPlansController#quick_update`: `app/controllers/meal_plans_controller.rb:100-122`
+- `MealPlansController#save_meal_plan!`
+- `MealPlansController#sync_full_update!`, `#validate_full_update_ids!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`
+- `MealPlansController#quick_update`, `#sync_quick_ingredients!`
 - `ApplicationController#migrate_past_meal_plans!`: `app/controllers/application_controller.rb:30-56`
 - `CookingRecordsController#save_cooking_record_with_tags`: `app/controllers/cooking_records_controller.rb:132-140`
 - `ShoppingItemsController#reorder`: `app/controllers/shopping_items_controller.rb:75-89`
@@ -298,5 +334,9 @@ erDiagram
 - 現在の schema dump は MySQL 方言を含む一方、本番 bundle は PostgreSQL を使用する。migration/schema load の互換性は未確認。
 - controller が業務処理を直接持つため、同一処理を新しい入口から再利用するときは transaction、認証 scope、副作用を取りこぼしやすい。
 - GET 時履歴化は一般的な「GET は読み取り専用」という前提と異なる。
+- 通常編集とquick editを同じ献立へ並行実行した場合の競合結果は未確認である。
+- production相当データ量での通常編集性能と、実端末固有の表示・操作差は未確認である。
 - WebAuthn の実端末検証、challenge の運用、有効 origin/RP ID の本番値は未確認。
 - DB 直接操作時の削除動作は Rails の `dependent: :destroy` と異なる可能性がある。DB 操作は承認対象であり、AI が実行しない。
+
+今回の通常編集変更にDB migration、schema、外部サービス、環境変数の変更はない。根拠: `git diff --name-only`; `db/schema.rb`と`db/migrate/`が変更対象外であること

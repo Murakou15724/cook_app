@@ -8,10 +8,10 @@
 記載区分は次のとおり。
 
 - **実装事実**: リポジトリ内のコードまたは設定で確認できた内容
-- **実測結果**: 2026-07-25 の調査時に実行された検証結果
+- **実測結果**: 2026-07-26 までに実行された検証結果
 - **未確認**: 調査環境では実機確認できていない内容
 
-基準 commit: `accfa21f70818c5e7e4067119a7fabfc72f5c7f1`
+基準: コミット済みのcommit `674c39d5882339af3cfa73cebc410d619aebf7fc`と、branch `meal-plan-edit_0726`上の未コミット実装差分およびdocs差分。未コミット差分を基準commitに含まれる変更として扱わない
 
 ## 2. 技術構成
 
@@ -48,7 +48,7 @@ bin/rails server
 
 データベース準備が必要な場合は、先に対象環境と実行内容について人間の明示承認を得ること。AI は未承認で `db:create`、`db:migrate`、`db:schema:load`、`db:drop` などを実行しない。
 
-test DBの接続先と隔離を確認し、人間の明示承認を得た後に、まず並列実行を避けた次のコマンドで全Minitestを実行することを提案する。このコマンドも2026-07-25時点では未実測である。
+test DBの接続先と隔離を確認し、人間の明示承認を得た後に、まず並列実行を避けた次のコマンドで全Minitestを実行できる。これは標準の実行例であり、2026-07-26の実測結果はseed・run数・assertion数を5章へ記録する。
 
 ```bash
 PARALLEL_WORKERS=1 bin/rails test
@@ -91,28 +91,33 @@ development / test は MySQL、production は `DATABASE_URL` を経由する構�
 
 調査時は原則としてコード、schema、migrationを読む。DBへ問い合わせる場合も原則 SELECT のみとし、接続先を先に確認する。
 
-## 5. 検証コマンドと2026-07-25の結果
+## 5. 検証コマンドと2026-07-26の結果
 
 ### 5.1 実測済み
 
 | 検証 | 結果 | 判定 |
 |---|---|---|
-| `bundle check` | 依存関係を満たすことを確認 | 成功 |
-| Rubyファイル83件の構文確認 | 構文エラーなし | 成功 |
+| `test/integration/meal_plans_test.rb`（seed 8849） | 33 runs、301 assertions、0 failures、0 errors、0 skips | 成功 |
+| Rails test全体（seed 10885） | 86 runs、641 assertions、0 failures、0 errors、0 skips | 成功 |
+| `test/system/meal_plan_edit_test.rb`、Chrome 151（seed 25849） | 4 runs、20 assertions、0 failures、0 errors、0 skips | 成功 |
+| Ruby構文確認 | 構文エラーなし | 成功 |
+| Node構文確認 | `meal_plan_form_controller.js`の構文エラーなし | 成功 |
+| ActionViewによるERB解析 | 変更ERBの解析エラーなし | 成功 |
 | Zeitwerk eager load確認 | 定数ロードエラーなし | 成功 |
-| routes確認 | ルート生成に成功 | 成功 |
+| `bin/rails routes -c MealPlansController` | コマンドが完了し、MealPlansControllerのroute出力を確認 | 成功 |
+| 差分検査 | `git diff --check`でエラーなし | 成功 |
 
-上記は構文・依存・ロード・ルーティングの検証であり、画面操作やDBを使う業務処理の成功を保証するものではない。
+Integration testでは通常編集のID差分同期、所有scope、入力異常、rollback、買い物同期、CookingRecord保護と、作成・quick edit・削除の回帰を確認した。System testではquick edit drawerから通常編集へのtop-level navigation、料理削除確認のCancel/OK、focus移動、keyboard操作、Chrome 151の320px幅を確認した。
 
-### 5.2 未実行
+テスト根拠: `test/integration/meal_plans_test.rb`; `test/system/meal_plan_edit_test.rb`
 
-Minitest のテストケースは68件存在するが、調査環境ではMySQLへ接続できなかったため実行できていない。`/tmp/mysql.sock`の存在は確認できたものの、接続は`ERROR 2002`で失敗した。DB事前確認の段階で停止したため、Minitest自体は起動していない。したがって、68件を「成功」または「失敗」と扱わない。
+routes確認はroute定義を読み込んで出力できることの検証であり、Minitest/System testのrun数・assertion数には含めない。
 
-- 区分: **未確認**
-- 未実行理由: `/tmp/mysql.sock`は存在したが、MySQL接続が`ERROR 2002`で失敗
-- 停止位置: DB事前確認。Minitestプロセスは未起動
-- 次回の確認: test DBの接続先と隔離を確認して承認を得た後、`PARALLEL_WORKERS=1 bin/rails test`を実行し、成功件数・失敗件数・エラー内容を記録する
-- テスト配置根拠: `test/models/`、`test/integration/`、`test/channels/`
+### 5.2 検証時の環境変更と未確認範囲
+
+- test DBの作成、migration、dropは実行していない。
+- System test用のChromeは検証時に`/tmp`へ一時取得しただけで、リポジトリ構成、依存定義、環境変数は変更していない。
+- production相当DB・データ量での性能、通常編集とquick editの並行更新、実端末固有の表示・操作差は未確認である。
 
 推奨する検証順序は次のとおり。
 
