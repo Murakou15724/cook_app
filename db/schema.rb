@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_24_020100) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_26_010100) do
   create_table "cooking_record_person_tags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "cooking_record_id", null: false
     t.bigint "person_tag_id", null: false
@@ -105,10 +105,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_24_020100) do
     t.boolean "default_selected", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "sort_order", default: 0, null: false
     t.index ["created_at"], name: "index_person_tags_on_created_at"
     t.index ["user_id", "default_selected"], name: "index_person_tags_on_user_id_and_default_selected"
     t.index ["user_id", "name"], name: "index_person_tags_on_user_id_and_name", unique: true
+    t.index ["user_id", "sort_order", "id"], name: "index_person_tags_on_user_id_and_sort_order_and_id"
     t.index ["user_id"], name: "index_person_tags_on_user_id"
+    t.check_constraint "`sort_order` >= 0", name: "chk_person_tags_sort_order_non_negative"
     t.check_constraint "char_length(trim(`name`)) > 0", name: "chk_person_tags_name_present"
   end
 

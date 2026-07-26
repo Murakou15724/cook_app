@@ -16,8 +16,9 @@
             <div class="meal-head">
               <div class="meal-head-main">
                 <span class="meal-label"><%= meal_type_label(meal_type) %></span>
-                <% if plan&.person_tags&.any? %>
-                  <span class="meal-tag-line"><%= plan.person_tags.map(&:name).join("、") %></span>
+                <% ordered_person_tags = plan&.display_ordered_person_tags || [] %>
+                <% if ordered_person_tags.any? %>
+                  <span class="meal-tag-line"><%= ordered_person_tags.map(&:name).join("、") %></span>
                 <% end %>
               </div>
             </div>

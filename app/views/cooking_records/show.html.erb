@@ -6,8 +6,9 @@
 <section class="card">
   <div class="section-title"><h2>詳細</h2><span class="status-badge"><%= @cooking_record.eating_out? ? "外食" : "通常" %></span></div>
   <p><%= @cooking_record.memo.presence || "メモはありません。" %></p>
-  <% if @cooking_record.person_tags.any? %>
-    <div class="chip-list"><% @cooking_record.person_tags.each do |tag| %><span><%= tag.name %></span><% end %></div>
+  <% ordered_person_tags = @cooking_record.display_ordered_person_tags %>
+  <% if ordered_person_tags.any? %>
+    <div class="chip-list"><% ordered_person_tags.each do |tag| %><span><%= tag.name %></span><% end %></div>
   <% end %>
 </section>
 

@@ -50,7 +50,13 @@ module Admin
     end
 
     def destroy
-      if @user.destroy
+      destroyed = User.transaction do
+        @user.lock!
+        @user.person_tags.order(:id).lock.load
+        @user.destroy
+      end
+
+      if destroyed
         redirect_to admin_users_path, notice: "ユーザーを削除しました"
       else
         redirect_to admin_users_path, alert: @user.errors.full_messages.to_sentence

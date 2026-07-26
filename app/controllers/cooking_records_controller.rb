@@ -11,7 +11,7 @@ class CookingRecordsController < ApplicationController
   end
 
   def edit
-    @person_tags = current_user.person_tags.order(:name)
+    @person_tags = current_user.person_tags.display_ordered
   end
 
   def create
@@ -39,7 +39,7 @@ class CookingRecordsController < ApplicationController
     if save_cooking_record_with_tags(@cooking_record)
       redirect_to cooking_record_path(@cooking_record), notice: "過去料理を更新しました"
     else
-      @person_tags = current_user.person_tags.order(:name)
+      @person_tags = current_user.person_tags.display_ordered
       render :edit, status: :unprocessable_content
     end
   end
@@ -56,7 +56,7 @@ class CookingRecordsController < ApplicationController
   end
 
   def prepare_index_state(display_mode: nil, record: nil)
-    @person_tags = current_user.person_tags.order(:name)
+    @person_tags = current_user.person_tags.display_ordered
     @cooking_record = record || current_user.cooking_records.new(cooked_on: Date.current, meal_type: :lunch, eating_out: true)
     @query = params[:q].to_s.strip
     @selected_person_tag_ids = selected_person_tag_ids
