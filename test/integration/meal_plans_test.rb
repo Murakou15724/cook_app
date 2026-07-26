@@ -51,7 +51,7 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_select "body", { text: /朝食/, count: 0 }
   end
 
-  test "index shows person tags next to meal type and quick edit drawer" do
+  test "index links every dish to the full edit page and preserves meal details" do
     tag = @user.person_tags.create!(name: "家族")
     meal_plan = @user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
     meal_plan.person_tags << tag
@@ -68,17 +68,9 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_select ".meal-edit-trigger h3", "カレー"
     assert_select ".meal-dish-detail", /玉ねぎ, にんじん/
     assert_select ".meal-dish-detail", /甘口/
-    assert_select ".edit-drawer"
-
-    document = Nokogiri::HTML(response.body)
-    curry_template = document.at_css("template[data-dish-id='#{curry.id}']").inner_html
-    assert_includes curry_template, "dishes[#{curry.id}][name]"
-    assert_includes curry_template, "献立名"
-    assert_includes curry_template, "食材"
-    assert_includes curry_template, "add_to_shopping_list"
-    assert_includes curry_template, "買い物リストに追加"
-    assert_includes curry_template, "メモ"
-    assert_not_includes curry_template, "dishes[#{salad.id}][name]"
+    assert_select "a.dish.meal-edit-trigger[href='#{edit_meal_plan_path(meal_plan)}'][data-turbo-frame='_top']", count: 2
+    assert_select "a.dish.meal-edit-trigger[href='#{edit_meal_plan_path(meal_plan)}'] h3", { text: "カレー", count: 1 }
+    assert_select "a.dish.meal-edit-trigger[href='#{edit_meal_plan_path(meal_plan)}'] h3", { text: "サラダ", count: 1 }
   end
 
   test "user creates a meal plan with multiple dishes ingredients person tags and shopping items" do
@@ -197,14 +189,25 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_select "button[data-turbo-confirm='本当に削除しますか？']", "献立を削除"
   end
 
-  test "quick edit drawer links to the full edit page outside the turbo frame" do
+  test "index keeps unregistered slots unlinked and omits the quick edit interface" do
     meal_plan = @user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
     meal_plan.plan_dishes.create!(name: "カレー", position: 0)
 
     get meal_plans_path
 
     assert_response :success
-    assert_select "template[data-plan-id='#{meal_plan.id}'] a[href='#{edit_meal_plan_path(meal_plan)}'][data-turbo-frame='_top']", "献立全体を編集"
+    assert_select "turbo-frame#meal_plans", count: 1
+    assert_select ".meal-block .empty-state", { text: "未登録", count: 1 }
+    assert_select "a", { text: "未登録", count: 0 }
+    assert_select "[data-controller='meal-plan-edit']", count: 0
+    assert_select "[data-action*='meal-plan-edit']", count: 0
+    assert_select "[data-meal-plan-edit-target]", count: 0
+    assert_select "input[name='quick_update']", count: 0
+    assert_select ".meal-drawer-form", count: 0
+    assert_select ".drawer-backdrop", count: 0
+    assert_select ".edit-drawer", count: 0
+    assert_select "template", count: 0
+    assert_select "a", { text: "献立全体を編集", count: 0 }
   end
 
   test "user updates dishes ingredients person tags and shopping items" do

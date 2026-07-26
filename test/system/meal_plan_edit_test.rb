@@ -18,16 +18,55 @@ class MealPlanEditTest < ApplicationSystemTestCase
     assert_current_path root_path
   end
 
-  test "drawer opens the top-level full edit page" do
+  test "dish selection opens the full edit page directly" do
     visit meal_plans_path
 
-    click_button "カレー"
-    within ".edit-drawer" do
-      click_link "献立全体を編集"
-    end
+    find("a.meal-edit-trigger", text: "カレー").click
 
     assert_current_path edit_meal_plan_path(@meal_plan)
     assert_selector "h1", text: "献立編集"
+  end
+
+  test "dish link is reachable with tab and opens with enter" do
+    visit meal_plans_path
+    dish_link = find("a.meal-edit-trigger", text: "カレー")
+
+    10.times do
+      page.driver.browser.action.send_keys(:tab).perform
+      break if page.evaluate_script("document.activeElement.textContent.includes('カレー')")
+    end
+
+    assert_equal dish_link[:href], page.evaluate_script("document.activeElement.href")
+    page.driver.browser.action.send_keys(:enter).perform
+
+    assert_current_path edit_meal_plan_path(@meal_plan)
+    assert_selector "h1", text: "献立編集"
+  end
+
+  test "dish link uses native navigation when JavaScript is disabled" do
+    page.driver.browser.execute_cdp("Emulation.setScriptExecutionDisabled", value: true)
+    visit meal_plans_path
+
+    find("a.meal-edit-trigger", text: "カレー").click
+
+    assert_current_path edit_meal_plan_path(@meal_plan)
+    assert_selector "h1", text: "献立編集"
+  ensure
+    page.driver.browser.execute_cdp("Emulation.setScriptExecutionDisabled", value: false)
+  end
+
+  test "meal plan list remains operable without horizontal overflow at 320 pixels" do
+    page.current_window.resize_to(320, 800)
+    visit meal_plans_path
+
+    assert_operator page.evaluate_script("document.documentElement.scrollWidth"), :<=, page.evaluate_script("window.innerWidth")
+    assert_selector ".meal-label", text: "昼食"
+    assert_selector "a.meal-edit-trigger", text: "カレー"
+    assert_selector ".empty-state", text: "未登録", count: 1
+    assert_no_selector "a", text: "未登録"
+
+    find("a.meal-edit-trigger", text: "カレー").click
+    assert_current_path edit_meal_plan_path(@meal_plan)
   end
 
   test "dish deletion confirmation cancel preserves ids and ok moves focus to the adjacent dish" do
