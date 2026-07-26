@@ -3,7 +3,8 @@
 ## 1. 記載区分
 
 - **実装済み**: controller、model、view、route から処理を確認できる。
-- **テスト期待あり**: Minitest に期待があるが、2026-07-25 時点では MySQL 接続不能のため suite は未実行。
+- **テスト期待**: Minitestに期待が記載されている範囲。
+- **テスト実測あり**: 2026-07-26 に Minitest と Chrome system test の成功を確認した範囲。
 - **stub**: route/action は存在するが、対象処理を行わず案内して戻る。
 - **未確認**: 外部環境・実端末での確認が必要。
 
@@ -101,9 +102,9 @@
 
 過去日付、料理0件、同一ユーザー・日付・食事区分の重複は拒否される。
 
-根拠: `app/controllers/meal_plans_controller.rb:16-45,142-148,236-266`; `app/models/meal_plan.rb:10-16`
+根拠: `MealPlansController#create`, `#past_meal_date?`, `#selected_person_tag_ids`, `#save_meal_plan!`（`app/controllers/meal_plans_controller.rb`）; `app/models/meal_plan.rb:10-16`
 
-テスト期待: `test/integration/meal_plans_test.rb:84-147,347-415`
+テスト期待: `test/integration/meal_plans_test.rb`の「user creates a meal plan with multiple dishes ingredients person tags and shopping items」「user cannot create meal plan without required fields or dishes」「duplicate meal plan does not leave partial related data」
 
 ### 4.3 通常献立編集と quick edit の違い
 
@@ -112,19 +113,55 @@
 | 項目 | 通常編集 | quick edit |
 |---|---|---|
 | 分岐 | `quick_update` parameter なし | `quick_update` parameter あり |
+| 対象 | ログインユーザー所有かつ未移行の献立 | ログインユーザー所有かつ未移行の献立 |
 | 日付・食事区分 | 更新対象 | 更新しない |
-| 料理 | 既存 `plan_dishes` を全削除後に再作成 | ID で既存料理の name/memo を更新 |
-| 食材 | 全削除・再作成に伴う | ID 単位で更新・削除、新規追加 |
-| 買い物項目 | 食材再作成に伴い再作成 | 対象食材に紐づく項目だけ同期 |
+| 料理 | hidden ID で既存料理を差分更新し、新規追加・任意削除も行う | ID で既存料理の name/memo を更新 |
+| 食材 | hidden ID で差分更新・追加・削除 | ID 単位で更新・削除、新規追加 |
+| 買い物項目 | 食材の名称と追加指定の状態遷移に応じて差分同期 | 対象食材に紐づく項目だけ同期 |
 | 応答 | HTML redirect | HTML または Turbo Stream |
+
+通常編集では、フォームに `PlanDish.id` と `DishIngredient.id` をhidden fieldとして保持する。更新開始前にStrong Parameters、料理・食材collectionの形、ID重複、nested IDの所有範囲を検証し、1 transaction内で対象献立をlockして差分同期する。
+
+期待するparameter shapeは次のとおり。料理と食材のcollection keyは数字文字列である。既存レコードは`id`を含み、新規レコードは`id`を省略する。
+
+```text
+meal_date
+meal_type
+person_tag_ids[]
+dishes["0"] {
+  id, name, memo,
+  ingredients["0"] { id, name, add_to_shopping_list }
+}
+```
+
+- GET/PATCHの対象献立が他ユーザー所有または移行済みの場合は404とする。
+- 別献立・別料理・他ユーザー所有・存在しないnested IDは404とし、変更を残さない。
+- collectionの不正な形、料理・食材IDの重複、料理0件、日付・食事区分・料理名の空欄、過去日付、日付・食事区分の重複は422とし、関連変更をすべてrollbackする。
+- 日付は今日または未来へ変更できる。
+- 既存料理は名称・メモを変更でき、新規料理は存続する料理の最大`position`より後へ連番で追加する。送信から除いた料理は削除する。
+- 未変更の`PlanDish`、`DishIngredient`、`ShoppingItem`、人物タグjoinは保存処理を行わず、ID、`updated_at`、`position`、`eating_out`、`memo`、`purchased`、`purchased_at`、`sort_order`、`manual`等を保持する。
+- 食材が未変更なら買い物項目にも書き込まない。買い物追加が有効なまま食材名だけ変わった場合は買い物項目の名称だけを変え、購入情報等は保持する。
+- 買い物追加が無効から有効になった場合は既存項目を再利用し、なければ作成する。有効から無効、食材削除、料理削除の場合は、購入済みを含む紐づく買い物項目を削除する。
+- 削除予定の料理を参照する`CookingRecord`がある場合は、mutation前に422として更新全体を拒否する。`CookingRecord`自体は通常編集で変更しない。
+
+通常編集への画面導線と操作仕様:
+
+- quick edit drawer内の「献立全体を編集」は`data-turbo-frame="_top"`で通常編集ページをtop-level navigationとして開く。
+- 通常編集では全料理に削除ボタンを表示し、最後の1件も画面上では削除できる。料理0件のまま送信すると422になる。
+- 削除確認をキャンセルした場合はDOMとhidden IDを保持する。削除確定後は次の料理、前の料理、「料理を追加」ボタンの順でfocusを移す。
+- 料理削除はEnter/Spaceでも操作できる。日付inputの最小値は当日である。
+- Chrome 151のsystem testで320px幅における横overflowなしと主要操作を確認した。
 
 根拠:
 
-- 分岐: `app/controllers/meal_plans_controller.rb:53-80`
-- 通常編集の全置換: `app/controllers/meal_plans_controller.rb:236-265`
-- quick edit: `app/controllers/meal_plans_controller.rb:100-122,150-210`
+- 対象scope・分岐: `MealPlansController#set_editable_meal_plan`, `#update`, `#quick_update`
+- 入力検証: `MealPlansController#full_update_params`, `#validated_update_collection`, `#validate_full_update_input!`, `#validate_full_update_ids!`
+- 差分同期: `MealPlansController#sync_full_update!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`, `#sync_existing_full_ingredient!`
+- 履歴保護: `MealPlansController#reject_cooking_record_dish_deletion!`
+- hidden ID・日付・削除操作: `app/views/meal_plans/edit.html.erb`; `MealPlanFormController#removeDish`
+- drawer導線: `app/views/meal_plans/_list.html.erb`
 
-テスト期待: 通常編集 `test/integration/meal_plans_test.rb:196-237`; quick edit `test/integration/meal_plans_test.rb:239-303`
+テスト根拠: `test/integration/meal_plans_test.rb`の通常編集、scope、不正shape、不正nested ID、重複ID、rollback、買い物同期、CookingRecord保護、quick edit・作成・削除の各ケース; `test/system/meal_plan_edit_test.rb`のdrawer導線、削除確認・focus・keyboard・320pxの各ケース
 
 ### 4.4 過去献立の履歴化
 
@@ -137,7 +174,7 @@
 
 元料理 ID の存在確認と unique 制約により再実行時の重複を避ける設計である。ただし GET が DB 書き込みを行う点は運用上の注意事項である。
 
-根拠: `app/controllers/application_controller.rb:30-56`; 呼び出し元 `app/controllers/home_controller.rb:2-3`, `app/controllers/meal_plans_controller.rb:2-3`, `app/controllers/cooking_records_controller.rb:2-3`
+根拠: `ApplicationController#migrate_past_meal_plans!`; 呼び出し元は`HomeController`, `MealPlansController`, `CookingRecordsController`のbefore_action宣言
 
 テスト期待: `test/integration/cooking_record_migration_test.rb:18-56`
 
@@ -176,22 +213,30 @@
 
 | 対象 | 現在の動作 | 根拠 |
 |---|---|---|
-| `MealPlansController#move_dish` | 並び替えず編集画面へ redirect | `app/controllers/meal_plans_controller.rb:87-89` |
+| `MealPlansController#move_dish` | 並び替えず編集画面へ redirect | `MealPlansController#move_dish`（`app/controllers/meal_plans_controller.rb`） |
 | `Admin::MealPlansController#destroy` | 削除せず一覧へ redirect | `app/controllers/admin/meal_plans_controller.rb:9-11` |
 | `Admin::CookingRecordsController#destroy` | 削除せず一覧へ redirect | `app/controllers/admin/cooking_records_controller.rb:9-11` |
 | `Admin::ShoppingItemsController#destroy` | 削除せず一覧へ redirect | `app/controllers/admin/shopping_items_controller.rb:9-11` |
 | `Admin::PersonTagsController#destroy` | 削除せず一覧へ redirect | `app/controllers/admin/person_tags_controller.rb:9-11` |
 | Job / Mailer / Cable | 基底クラスのみで業務処理なし | [01-system-overview.md](01-system-overview.md#対象外または実機能なし) |
 
-## 6. テスト期待と未確認
+## 6. テスト実測と未確認
 
-テストコードには Integration 57件、Model 10件、Helper 1件の計68件の期待がある。主な対象は認証、献立、買い物、履歴化、人物タグ、管理画面、パスキー options である。
+2026-07-26の実測結果は次のとおり。
 
-ただし、調査時は MySQL に接続できず suite を実行できていない。そのため本書の「テスト期待あり」はテスト成功を意味しない。実測状況は [04-development-testing-operations.md](04-development-testing-operations.md) を参照する。
+| 対象 | seed | 結果 |
+|---|---:|---|
+| `test/integration/meal_plans_test.rb` | 8849 | 33 runs、301 assertions、0 failures、0 errors、0 skips |
+| Rails test全体 | 10885 | 86 runs、641 assertions、0 failures、0 errors、0 skips |
+| `test/system/meal_plan_edit_test.rb`（Chrome 151） | 25849 | 4 runs、20 assertions、0 failures、0 errors、0 skips |
+
+Ruby構文、Node構文、ActionViewによるERB解析、Zeitwerk、差分検査に加え、`bin/rails routes -c MealPlansController`が成功し、MealPlansControllerのroute出力を確認した。test DBの作成・migration・dropは実行していない。詳細は [04-development-testing-operations.md](04-development-testing-operations.md) を参照する。
 
 未確認事項:
 
 - 実ブラウザー・実端末での WebAuthn 登録とログイン
 - production PostgreSQL 上の全ユースケース
+- 通常編集とquick editを同じ献立へ同時実行した場合の競合結果
+- production相当データ量での通常編集性能と実端末固有の表示・操作差
 - stub route の将来仕様
 - 管理者登録を誰がどの運用で実施するか

@@ -9,7 +9,7 @@ cook_app は、利用者ごとに献立、料理、食材、買い物項目、�
 主な根拠:
 
 - route 全体: `config/routes.rb:1-70` (`Rails.application.routes.draw`)
-- 献立作成と買い物同期: `app/controllers/meal_plans_controller.rb:16-45,236-266` (`MealPlansController#create`, `#save_meal_plan!`)
+- 献立作成と買い物同期: `MealPlansController#create`, `#save_meal_plan!`（`app/controllers/meal_plans_controller.rb`）
 - 過去献立の履歴化: `app/controllers/application_controller.rb:30-56` (`ApplicationController#migrate_past_meal_plans!`)
 - 管理者認可: `app/controllers/admin/base_controller.rb:1-5` (`Admin::BaseController`)
 
@@ -89,8 +89,9 @@ flowchart LR
 
 認証、ユーザー scope、parameter 整形、transaction、画面応答を担う。サービス層はなく、献立保存・買い物同期・履歴化などの業務処理も controller に置かれている。
 
-- 献立の通常保存: `app/controllers/meal_plans_controller.rb:236-266`
-- quick edit: `app/controllers/meal_plans_controller.rb:100-210`
+- 献立作成時の保存: `MealPlansController#save_meal_plan!`（`app/controllers/meal_plans_controller.rb`）
+- 献立通常編集の差分同期: `MealPlansController#sync_full_update!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`
+- quick edit: `MealPlansController#quick_update`, `#sync_quick_ingredients!`
 - 過去献立の履歴化: `app/controllers/application_controller.rb:30-56`
 
 ### Model

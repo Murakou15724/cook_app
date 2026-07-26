@@ -88,6 +88,7 @@
                         <%= text_area_tag "dishes[#{dish.id}][memo]", dish.memo, id: "dishes_#{dish.id}_memo", autocomplete: "off" %>
                       </div>
                     </section>
+                    <%= link_to "献立全体を編集", edit_meal_plan_path(plan), class: "secondary-button full-width drawer-full-edit-link", data: { turbo_frame: "_top" } %>
                   <% end %>
                 </template>
               <% end %>

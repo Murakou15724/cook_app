@@ -7,10 +7,15 @@ export default class extends Controller {
     "dishNumber",
     "removeDishButton",
     "dishTemplate",
+    "addDishButton",
     "ingredients",
     "ingredient",
     "ingredientTemplate"
   ]
+  static values = {
+    allowEmptyDishes: { type: Boolean, default: false },
+    confirmDishRemoval: { type: Boolean, default: false }
+  }
 
   connect() {
     this.refreshDishControls()
@@ -28,10 +33,19 @@ export default class extends Controller {
 
   removeDish(event) {
     const dish = event.target.closest("[data-meal-plan-form-target='dish']")
-    if (this.dishTargets.length <= 1 || !dish) return
+    if (!dish || (!this.allowEmptyDishesValue && this.dishTargets.length <= 1)) return
+    if (this.confirmDishRemovalValue && !window.confirm("この料理を削除しますか？")) return
+
+    const dishes = this.dishTargets
+    const index = dishes.indexOf(dish)
+    const nextFocusTarget =
+      dishes[index + 1]?.querySelector("input[type='text']") ||
+      dishes[index - 1]?.querySelector("input[type='text']") ||
+      (this.hasAddDishButtonTarget ? this.addDishButtonTarget : null)
 
     dish.remove()
     this.refreshDishControls()
+    nextFocusTarget?.focus()
   }
 
   addIngredient(event) {
@@ -86,7 +100,7 @@ export default class extends Controller {
     this.dishTargets.forEach((dish, index) => {
       dish.querySelector("[data-meal-plan-form-target='dishNumber']").textContent = index + 1
       dish.querySelectorAll("[data-meal-plan-form-target='removeDishButton']").forEach((button) => {
-        button.hidden = index === 0
+        button.hidden = !this.allowEmptyDishesValue && index === 0
       })
     })
   }
