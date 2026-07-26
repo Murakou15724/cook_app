@@ -47,9 +47,34 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
     assert_select ".shopping-row:not(.purchased) .shopping-edit-trigger"
     assert_select ".shopping-check-form[data-controller='shopping-toggle']"
     assert_select ".shopping-check[data-action='change->shopping-toggle#submit']"
+    assert_select(
+      ".shopping-list-card[data-controller='shopping-sort']" \
+      "[data-shopping-sort-url-value='#{reorder_shopping_items_path(format: :json)}']",
+      1
+    )
+    assert_select ".shopping-row--unpurchased", 3
+    [onion, onion2, milk].each do |ingredient|
+      assert_unpurchased_row_contract(@user.shopping_items.find_by!(dish_ingredient: ingredient))
+    end
     assert_select ".edit-drawer"
     assert_select "body", { text: /他人の料理/, count: 0 }
     assert_select "body", { text: /数量/, count: 0 }
+  end
+
+  test "unpurchased group keeps its layout contract with zero and one item" do
+    get shopping_items_path
+
+    assert_response :success
+    assert_select "#shopping_unpurchased_group .shopping-row--unpurchased", 0
+    assert_select "#shopping_unpurchased_group .empty-state", "未購入の項目はありません。"
+
+    item = @user.shopping_items.create!(name: "とても長い買い物項目名" * 10, manual: true)
+
+    get shopping_items_path
+
+    assert_response :success
+    assert_select "#shopping_unpurchased_group .shopping-row--unpurchased", 1
+    assert_unpurchased_row_contract(item)
   end
 
   test "user manually adds shopping item and blank name is rejected" do
@@ -85,6 +110,8 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "shopping_unpurchased_group"
     assert_includes response.body, "shopping_purchased_group"
     assert_not_includes response.body, "購入済みにしました"
+    assert_select ".shopping-row--unpurchased", 0
+    assert_select ".shopping-row.purchased", 1
 
     get shopping_items_path
     assert_select ".group-title span", "購入済み"
@@ -97,6 +124,7 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
     assert_includes response.body, "shopping_unpurchased_group"
     assert_includes response.body, "shopping_purchased_group"
     assert_not_includes response.body, "未購入に戻しました"
+    assert_unpurchased_row_contract(item)
   end
 
   test "toggling meal plan item moves only selected row" do
@@ -138,6 +166,44 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
     assert_includes response.media_type, "text/vnd.turbo-stream.html"
     assert_includes response.body, "買い物項目を更新しました"
     assert_includes response.body, "豆乳"
+    assert_unpurchased_row_contract(item)
+  end
+
+  test "purchased and admin shopping rows do not use the unpurchased layout modifier" do
+    unpurchased = @user.shopping_items.create!(name: "卵", manual: true)
+    @user.shopping_items.create!(name: "パン", manual: true, purchased: true)
+
+    get shopping_items_path
+
+    assert_response :success
+    assert_unpurchased_row_contract(unpurchased)
+    assert_select "#shopping_purchased_group .shopping-row.purchased", 1
+    assert_select "#shopping_purchased_group .shopping-row--unpurchased", 0
+    purchased_children = css_select("#shopping_purchased_group .shopping-row.purchased").first.element_children
+    assert_includes purchased_children[0]["class"].to_s.split, "shopping-check-form"
+    assert_includes purchased_children[1]["class"].to_s.split, "shopping-row-main"
+    assert_includes purchased_children[2]["class"].to_s.split, "shopping-delete-form"
+
+    delete logout_path
+    admin = User.create!(
+      email: "shopping-admin@example.com",
+      password: "password1",
+      password_confirmation: "password1",
+      role: :admin
+    )
+    post login_path, params: { email: admin.email, password: "password1" }
+    get shopping_items_admin_user_path(@user)
+
+    assert_response :success
+    assert_select ".shopping-row", 2
+    assert_select ".shopping-row--unpurchased", 0
+    assert_select "[data-shopping-sort-target]", 0
+    assert_select ".shopping-check", 0
+    css_select(".shopping-row").each do |row|
+      direct_children = row.element_children
+      assert_includes direct_children[0]["class"].to_s.split, "check-icon"
+      assert_includes direct_children[1]["class"].to_s.split, "shopping-row-main"
+    end
   end
 
   test "user cannot update another user's shopping item" do
@@ -169,5 +235,52 @@ class ShoppingItemsTest < ActionDispatch::IntegrationTest
     assert_not @user.shopping_items.exists?(purchased.id)
     assert @user.shopping_items.exists?(unpurchased.id)
     assert @other_user.shopping_items.exists?(other_item.id)
+  end
+
+  private
+
+  def assert_unpurchased_row_contract(item)
+    rows = css_select(
+      "#shopping_unpurchased_group .shopping-row.shopping-row--unpurchased[data-shopping-item-id='#{item.id}']"
+    )
+    assert_equal 1, rows.size
+
+    row = rows.first
+    assert_equal "true", row["draggable"]
+    assert_equal "item", row["data-shopping-sort-target"]
+
+    direct_children = row.element_children
+    assert_equal 3, direct_children.size
+    assert_includes direct_children[0]["class"].to_s.split, "shopping-edit-trigger"
+    assert_includes direct_children[1]["class"].to_s.split, "drag-handle"
+    assert_includes direct_children[2]["class"].to_s.split, "shopping-check-form"
+
+    edit_trigger = direct_children[0]
+    assert_equal "button", edit_trigger.name
+    assert_equal "click->shopping-edit#open", edit_trigger["data-action"]
+    assert_equal item.name, edit_trigger["data-shopping-edit-name-param"]
+    assert_equal ApplicationController.helpers.shopping_item_context(item),
+                 edit_trigger["data-shopping-edit-context-param"]
+    assert_equal shopping_item_path(item, format: :turbo_stream),
+                 edit_trigger["data-shopping-edit-update-url-param"]
+    assert_equal shopping_item_path(item, format: :turbo_stream),
+                 edit_trigger["data-shopping-edit-delete-url-param"]
+
+    drag_handle = direct_children[1]
+    assert_equal "button", drag_handle.name
+    assert_equal "並び替え", drag_handle["aria-label"]
+    assert_equal "↕", drag_handle.text.strip
+
+    check_form = direct_children[2]
+    assert_equal toggle_purchased_shopping_item_path(item), check_form["action"]
+    assert_equal "shopping-toggle", check_form["data-controller"]
+    assert check_form.at_css("input[name='_method'][value='patch']")
+
+    checkbox = check_form.at_css("input.shopping-check")
+    assert_equal "purchased", checkbox["name"]
+    assert_equal "1", checkbox["value"]
+    assert_equal "change->shopping-toggle#submit", checkbox["data-action"]
+    assert_equal "#{item.name}を購入済みにする", checkbox["aria-label"]
+    assert_nil checkbox["checked"]
   end
 end
