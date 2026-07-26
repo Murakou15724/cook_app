@@ -10,13 +10,13 @@ class MealPlansController < ApplicationController
 
   def new
     @meal_plan = current_user.meal_plans.new(meal_date: Date.current)
-    @person_tags = current_user.person_tags.order(:name)
+    @person_tags = current_user.person_tags.display_ordered
     @dish_inputs = default_dish_inputs
   end
 
   def create
     @meal_plan = current_user.meal_plans.new(meal_plan_params)
-    @person_tags = current_user.person_tags.order(:name)
+    @person_tags = current_user.person_tags.display_ordered
     @dish_inputs = normalized_dish_inputs
     @selected_person_tag_ids = selected_person_tag_ids
 
@@ -46,7 +46,7 @@ class MealPlansController < ApplicationController
   end
 
   def edit
-    @person_tags = current_user.person_tags.order(:name)
+    @person_tags = current_user.person_tags.display_ordered
     @selected_person_tag_ids = @meal_plan.person_tag_ids
     @dish_inputs = dish_inputs_from_meal_plan(@meal_plan)
   end
@@ -57,7 +57,7 @@ class MealPlansController < ApplicationController
       return
     end
 
-    @person_tags = current_user.person_tags.order(:name)
+    @person_tags = current_user.person_tags.display_ordered
     @selected_person_tag_ids = selected_update_person_tag_ids
     @dish_inputs = normalized_update_dish_inputs
     @meal_plan.assign_attributes(update_meal_plan_attributes)

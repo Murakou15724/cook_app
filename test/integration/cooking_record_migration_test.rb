@@ -233,4 +233,33 @@ class CookingRecordMigrationTest < ActionDispatch::IntegrationTest
     end
     assert_redirected_to cooking_records_path(display_mode: "all")
   end
+
+  test "selection and attached tags use saved order on all cooking record screens" do
+    first = @user.person_tags.create!(name: "家族")
+    second = @user.person_tags.create!(name: "友人")
+    first.update!(sort_order: 2000)
+    second.update!(sort_order: 1000)
+    record = @user.cooking_records.create!(
+      name: "カレー",
+      cooked_on: Date.current,
+      meal_type: :lunch
+    )
+    record.person_tags << [first, second]
+
+    get cooking_records_path(display_mode: "all")
+    assert_equal ["友人", "家族"],
+                 css_select(".filter-chip-list .check-row").map { |tag| tag.text.strip }
+    assert_equal ["友人", "家族"],
+                 css_select(".drawer-tag-list label span").map { |tag| tag.text.strip }
+    assert_equal ["友人", "家族"],
+                 css_select(".record-tags span").map { |tag| tag.text.strip }
+
+    get edit_cooking_record_path(record)
+    assert_equal ["友人", "家族"],
+                 css_select(".chip-list .check-row").map { |tag| tag.text.strip }
+
+    get cooking_record_path(record)
+    assert_equal ["友人", "家族"],
+                 css_select(".chip-list span").map { |tag| tag.text.strip }
+  end
 end

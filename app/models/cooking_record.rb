@@ -16,6 +16,13 @@ class CookingRecord < ApplicationRecord
 
   scope :newest_first, -> { order(cooked_on: :desc, meal_type: :asc, created_at: :desc) }
 
+  def display_ordered_person_tags
+    person_tags_association = association(:person_tags)
+    return person_tags_association.target.sort_by { |tag| [tag.sort_order, tag.id] } if person_tags_association.loaded?
+
+    person_tags.display_ordered.to_a
+  end
+
   private
 
   def normalize_name

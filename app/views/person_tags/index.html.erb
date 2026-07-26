@@ -12,15 +12,36 @@
 <section class="card">
   <div class="section-title"><h2>登録済み</h2><span class="count-badge"><%= @person_tags.size %>件</span></div>
   <% if @person_tags.any? %>
-    <% @person_tags.each do |tag| %>
-      <div class="dev-link-row">
-        <span><%= tag.name %><%= " / 初期選択" if tag.default_selected? %></span>
-        <span>
-          <%= link_to "編集", edit_person_tag_path(tag) %>
-          <%= button_to "削除", person_tag_path(tag), method: :delete, class: "link-button" %>
-        </span>
+    <div
+      data-controller="person-tag-sort"
+      data-person-tag-sort-url-value="<%= reorder_person_tags_path(format: :json) %>">
+      <% if @person_tags.many? %>
+      <% end %>
+      <p class="person-tag-sort-status" data-person-tag-sort-target="status" aria-live="polite"></p>
+      <div class="person-tag-sort-list" data-person-tag-sort-target="list" aria-busy="false">
+        <% @person_tags.each do |tag| %>
+          <div
+            class="dev-link-row person-tag-row"
+            data-person-tag-sort-target="item"
+            data-person-tag-id="<%= tag.id %>"
+            data-person-tag-name="<%= tag.name %>">
+            <button
+              type="button"
+              class="person-tag-sort-handle drag-handle"
+              aria-label="<%= tag.name %>を並び替え"
+              aria-pressed="false"
+              data-person-tag-sort-target="handle"
+              data-action="keydown->person-tag-sort#handleKeydown"
+              <%= "disabled" unless @person_tags.many? %>>↕</button>
+            <span class="person-tag-row-name"><%= tag.name %><%= " / 初期選択" if tag.default_selected? %></span>
+            <span class="person-tag-row-actions">
+              <%= link_to "編集", edit_person_tag_path(tag) %>
+              <%= button_to "削除", person_tag_path(tag), method: :delete, class: "link-button" %>
+            </span>
+          </div>
+        <% end %>
       </div>
-    <% end %>
+    </div>
   <% else %>
     <p class="empty-state">人物タグはまだありません。</p>
   <% end %>

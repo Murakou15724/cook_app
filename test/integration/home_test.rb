@@ -58,6 +58,20 @@ class HomeTest < ActionDispatch::IntegrationTest
     assert_select ".empty-state", { text: "未登録", count: 2 }
   end
 
+  test "shows attached person tags in saved relative order" do
+    first = @user.person_tags.create!(name: "家族")
+    second = @user.person_tags.create!(name: "友人")
+    first.update!(sort_order: 2000)
+    second.update!(sort_order: 1000)
+    meal_plan = @user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
+    meal_plan.person_tags << [first, second]
+
+    post login_path, params: { email: @user.email, password: "password1" }
+    follow_redirect!
+
+    assert_select ".meal-tag-line", "友人、家族"
+  end
+
   test "shows screen list only for admin users and keeps admin home out of header" do
     post login_path, params: { email: @user.email, password: "password1" }
     follow_redirect!

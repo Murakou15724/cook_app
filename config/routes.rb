@@ -39,7 +39,11 @@ Rails.application.routes.draw do
   end
 
   resources :cooking_records, only: [:index, :show, :edit, :update, :destroy, :create]
-  resources :person_tags, except: [:show]
+  resources :person_tags, except: [:show] do
+    collection do
+      patch :reorder
+    end
+  end
 
   # 管理者画面
   namespace :admin do

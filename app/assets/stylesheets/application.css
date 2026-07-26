@@ -1083,6 +1083,59 @@ select:focus {
   cursor: grabbing;
 }
 
+.person-tag-sort-help {
+  margin: 0 0 8px;
+}
+
+.person-tag-sort-status {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--blue);
+  color: var(--blue-text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.person-tag-sort-status:empty {
+  display: none;
+}
+
+.person-tag-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.person-tag-row-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.person-tag-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.person-tag-row-actions form {
+  margin: 0;
+}
+
+.person-tag-row-chosen {
+  box-shadow: 0 10px 22px rgba(71, 51, 34, 0.12);
+}
+
+.person-tag-row-ghost {
+  opacity: 0.45;
+  background: var(--accent);
+}
+
+.person-tag-sort-handle:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .compact-danger-button {
   min-height: 34px;
   padding: 0 10px;

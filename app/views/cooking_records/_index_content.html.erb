@@ -86,9 +86,10 @@
                         <%= record.memo %>
                       </p>
                     <% end %>
-                    <% if record.person_tags.any? %>
+                    <% ordered_person_tags = record.display_ordered_person_tags %>
+                    <% if ordered_person_tags.any? %>
                       <div class="chip-list record-tags">
-                        <% record.person_tags.each do |tag| %>
+                        <% ordered_person_tags.each do |tag| %>
                           <span><%= tag.name %></span>
                         <% end %>
                       </div>
