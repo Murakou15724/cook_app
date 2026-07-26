@@ -1154,6 +1154,25 @@ class MealPlansTest < ActionDispatch::IntegrationTest
     assert_not ingredient.add_to_shopping_list?
   end
 
+  test "new edit and index pages show person tags in saved order" do
+    first = @user.person_tags.create!(name: "家族")
+    second = @user.person_tags.create!(name: "友人")
+    first.update!(sort_order: 2000)
+    second.update!(sort_order: 1000)
+    meal_plan = @user.meal_plans.create!(meal_date: Date.current, meal_type: :lunch)
+    meal_plan.person_tags << [first, second]
+    meal_plan.plan_dishes.create!(name: "カレー", position: 0)
+
+    get new_meal_plan_path
+    assert_equal ["友人", "家族"], css_select(".chip-list .check-row").map { |tag| tag.text.strip }
+
+    get edit_meal_plan_path(meal_plan)
+    assert_equal ["友人", "家族"], css_select(".chip-list .check-row").map { |tag| tag.text.strip }
+
+    get meal_plans_path
+    assert_select ".meal-tag-line", "友人、家族"
+  end
+
   private
 
   def meal_plan_graph_snapshot(meal_plan)

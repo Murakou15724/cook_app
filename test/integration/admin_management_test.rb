@@ -106,4 +106,33 @@ class AdminManagementTest < ActionDispatch::IntegrationTest
     assert_select "a", { text: /編集|削除/, count: 0 }
     assert_select "form[action*='/admin/cooking_records/']", 0
   end
+
+  test "admin person tag display remains name ordered and has no reorder controls" do
+    first = @user.person_tags.create!(name: "Zulu")
+    second = @user.person_tags.create!(name: "Alpha")
+    first.update!(sort_order: 1000)
+    second.update!(sort_order: 2000)
+    post login_path, params: { email: @admin.email, password: "password1" }
+
+    get admin_person_tags_path
+
+    assert_response :success
+    displayed_names = css_select(".dev-link-row span:first-child").map { |tag| tag.text.split(" / ").last }
+    assert_equal ["Alpha", "Zulu"], displayed_names
+    assert_select "[data-controller='person-tag-sort']", count: 0
+    assert_select ".person-tag-sort-handle", count: 0
+  end
+
+  test "admin deletes a user with person tags" do
+    @user.person_tags.create!(name: "家族")
+    post login_path, params: { email: @admin.email, password: "password1" }
+
+    assert_difference -> { User.count }, -1 do
+      assert_difference -> { PersonTag.count }, -1 do
+        delete admin_user_path(@user)
+      end
+    end
+
+    assert_redirected_to admin_users_path
+  end
 end
