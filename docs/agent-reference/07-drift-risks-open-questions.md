@@ -2,7 +2,7 @@
 
 ## 1. 読み方
 
-この文書は、コミット済みのcommit `674c39d5882339af3cfa73cebc410d619aebf7fc`と、branch `meal-plan-edit_0726`上の未コミット実装差分およびdocs差分を2026-07-26に調査した結果として、資料と実装の不一致（drift）、実装上のリスク、調査環境で確認できなかった事項を分離して記録する。未コミット差分を基準commitに含まれる変更として扱わない。
+この文書は、コミット済みのcommit `4dc969d7a00d6b0ff7f1f80af670f6097388d888`と、branch `meal-plan-direct-edit_0726`上のIssue #7未コミット差分を2026-07-26に調査した結果として、資料と実装の不一致（drift）、実装上のリスク、調査環境で確認できなかった事項を分離して記録する。文書更新完了時点の未コミット差分はアプリ・テスト6ファイルと指定文書5ファイルであり、いずれも基準commitに含まれる変更として扱わない。旧branch `meal-plan-edit_0726`の差分は現行の未コミット差分ではない。
 
 - **Drift**: 文書・コメント・名称と実装が一致しないもの
 - **リスク**: 実装事実から問題が起こり得るが、発生を実測していないもの
@@ -12,14 +12,14 @@
 
 ## 2. Drift一覧
 
-### 2.1 今回解消したdrift
+### 2.1 解消済みdrift
 
 | ID | 旧記述・不足 | 実装事実 | 対応 |
 |---|---|---|---|
 | RD-01 | 通常献立編集が`PlanDish`以下を全削除・再作成すると記載されていた | hidden IDによるtransaction内差分同期へ変更され、未変更レコードは書き込まない | [機能仕様](02-functional-specification.md#43-通常献立編集と-quick-edit-の違い)、[アーキテクチャとデータ](03-architecture-and-data.md#32-通常献立編集の差分同期)、[変更影響マップ](06-change-impact-map.md#41-献立通常編集)を更新 |
-| RD-02 | quick edit drawerから通常編集へ進む導線が記載されていなかった | `data-turbo-frame="_top"`の「献立全体を編集」リンクを実装 | 機能仕様、変更影響マップへ画面導線とSystem test根拠を追加 |
-| RD-03 | MySQL接続不能によりMinitest 68件未実行と記載されていた | 2026-07-26に対象Integration 33件、Rails全86件、System 4件がすべて成功 | 機能仕様、開発・テスト・運用ガイド、変更影響マップ、リスク記録を実測へ更新 |
-| RD-04 | 本フォルダのREADMEが旧commit・旧調査日のままで、コミット済み基準と未コミット差分の境界が不明確だった | コミット済み基準は`674c39d5882339af3cfa73cebc410d619aebf7fc`、追加確認対象はbranch `meal-plan-edit_0726`上の未コミット実装/docs差分、調査・検証日は2026-07-26 | [README](README.md)と基準情報を持つ文書を現行化し、未コミット差分を基準commitに含めないと明記 |
+| RD-02 | quick edit drawerと「献立全体を編集」という中間リンクを経由する旧導線が記載されていた | Issue #7で、献立一覧の各料理anchorから`/meal_plans/:id/edit`へ`data-turbo-frame="_top"`で直接遷移するよう変更した | システム概要、機能仕様、変更影響マップを更新し、JavaScript無効、Tab/Enter、320px、未登録非リンクの実測根拠を追加 |
+| RD-03 | 旧実装のテスト件数が記載されていた | 2026-07-26にmeal plans Integration 33件、meal plan System 7件、Rails全88件、System全11件を含むIssue #7の対象・関連テストがすべて成功 | 機能仕様、開発・テスト・運用ガイド、変更影響マップ、リスク記録を現行実測へ更新 |
+| RD-04 | 基準commit・branchが旧作業`meal-plan-edit_0726`を指していた | コミット済み基準は`4dc969d7a00d6b0ff7f1f80af670f6097388d888`、現行未コミット差分はbranch `meal-plan-direct-edit_0726`上のIssue #7差分 | 基準情報を持つ04/07を現行化し、未コミット差分を基準commitに含めないと明記。更新対象外READMEの旧記述はD-07に記録 |
 | RD-05 | `MealPlansController`への一部`file:line`根拠がcontroller増分により旧位置を指していた | 現行コードのクラス・メソッドを再照合 | 01/02/03/06/07の該当根拠を`Class#method`中心へ置換 |
 | RD-06 | routes成功の記録が一般的な「routes確認」に留まり、テスト件数との区分も明示されていなかった | 2026-07-26に`bin/rails routes -c MealPlansController`が成功 | 実行コマンドと結果を記載し、Minitest/System testのrun・assertion数に含まないと明記 |
 
@@ -33,6 +33,7 @@
 | D-04 | keep-aliveコメントは「JST 6:00〜23:50」と説明するが、cronは毎時7〜57分の10分間隔であり、境界の表現が一致しない | `.github/workflows/render_keep_alive.yml:4-8` | 運用担当が最初・最後のping時刻を誤認する | UTC/JSTの実時刻表を確定し、コメントかcronを合わせる |
 | D-05 | productionはpg gemと`DATABASE_URL`を使う一方、Docker runtimeはMySQL clientを導入している | `Gemfile:45-53`、`config/database.yml:51-54`、`Dockerfile:43-46` | image内ツールと実DBの前提が一致しない可能性 | Render実設定を確認後、必要なclient packageを確定 |
 | D-06 | Job・Mailer・Cableの基底は存在するが、業務機能は存在しない | `app/jobs/application_job.rb:1-7`、`app/mailers/application_mailer.rb:1-4`、`app/channels/application_cable/channel.rb:1-4` | Rails標準ディレクトリの存在から機能実装済みと誤認する | 機能一覧では「未使用」と明記し、実装時に文書更新 |
+| D-07 | `docs/agent-reference/README.md`が旧基準commitと旧branch `meal-plan-edit_0726`を現行の追加確認対象として記載している | `docs/agent-reference/README.md:7-9`; 現行はcommit `4dc969d7a00d6b0ff7f1f80af670f6097388d888`、branch `meal-plan-direct-edit_0726` | READMEだけを読むと現行未コミット差分の境界を誤認する | Issue #7の指定5文書外であるため本変更では編集せず、次回README更新時に04/07と同期する |
 
 ## 3. セキュリティ・権限リスク
 
@@ -68,7 +69,7 @@
 
 ### R-05 通常献立編集とquick editの並行更新（Low）
 
-- **事実**: 通常編集は`MealPlansController#sync_full_update!`内でactive献立をlockしてID差分同期する。quick editは`#quick_update`内の別transactionで料理・食材・人物タグを更新する。
+- **事実**: Issue #7で献立一覧のquick edit UIは廃止された。一方、通常編集は`MealPlansController#sync_full_update!`内でactive献立をlockしてID差分同期し、server-side quick updateは`#quick_update`内の別transactionで料理・食材・人物タグを更新する。
 - **既存防御**: 両経路ともログインユーザー所有かつactiveの献立にscopeされ、nested IDも対象献立内に限定される。通常編集単独のrollbackと同一内容再送、quick editの回帰はIntegration testで成功した。
 - **リスク**: 同じ献立へ通常編集とquick editを同時送信した場合、後から実行された更新が先の変更を上書きする、または通常編集の送信内容から除外されたデータを削除する可能性がある。
 - **未確認**: full/quick updateを意図的に並行実行した結果、lock待ち、最終状態、利用者への競合通知。
@@ -93,9 +94,9 @@
 ### R-08 アプリケーションCIがない
 
 - **事実**: 確認できたGitHub Actions workflowは`/ping`ジョブであり、test/lint/buildは実行しない（`.github/workflows/render_keep_alive.yml:14-24`）。
-- **テスト実測**: 2026-07-26は対象Integration 33 runs / 301 assertions、Rails全体86 runs / 641 assertions、Chrome 151のSystem 4 runs / 20 assertionsが、failure・error・skipなしで成功した。
-- **非テスト検証**: Ruby構文、Node構文、ERB解析、Zeitwerk、差分検査が成功した。`bin/rails routes -c MealPlansController`も成功し、MealPlansControllerのroute出力を確認した。
-- **環境変更**: test DBの作成・migration・dropは実行していない。Chromeは`/tmp`へ一時取得しただけで、リポジトリ構成は変更していない。
+- **テスト実測**: 2026-07-26はmeal plans Integration 33 runs / 300 assertions（seed 29490）、meal plan System 7 / 34（seed 56906）、shopping Integration 10 / 299（seed 28223）、shopping System 4 / 140（seed 27001）、cooking record migration Integration 9 / 63（seed 7999）、Rails全体88 / 860（seed 42423）、System全体11 / 174（seed 1887）が、failure・error・skipなしで成功した。同一seedでの再実行も成功した。
+- **補助実測**: 0件シナリオの一時テスト1 run / 3 assertions（seed 11629）と、過去料理drawerの一時System test 1 / 4（seed 2757）もfailure・error・skipなしで成功した。
+- **環境事実**: 最初のIntegration testはsandboxからMySQL socketへ接続できず失敗したが、test DBに限定した許可済み環境で再実行して成功した。test DBの作成・migration・dropは実行していない。
 - **リスク**: 変更をpushしても自動回帰テストがなく、DB依存の不具合を検出できない。
 - **提案**: MySQL serviceを含むMinitest CIと、最低限の構文・Zeitwerk検証を別Issueで設計する。
 
@@ -113,14 +114,15 @@
 | O-02 | production DBの製品・version・schema | 値を記録せず管理画面とread-onlyメタデータで確認 |
 | O-03 | Dockerfileが実デプロイ経路で使われるか | Renderのruntime/build設定を確認 |
 | O-04 | production環境変数が必要分揃うか | 変数名と設定有無のみ確認し、値は読まない |
-| O-05 | 通常ログイン、パスキー、主要CRUDのproduction動作 | 承認済みテストアカウントと非破壊シナリオで確認 |
+| O-05 | 通常ログイン、パスキー、主要CRUD、およびIssue #7の直接編集導線のproduction/staging動作 | 承認済みテストアカウントと非破壊シナリオで確認 |
 | O-06 | production相当データ量での通常献立編集性能 | 隔離したproduction相当環境で料理・食材・買い物項目が多い献立の応答時間とquery/write数を計測 |
 | O-07 | MySQLとPostgreSQLでmigration・検索結果が一致するか | 両DBの隔離test環境で比較 |
 | O-08 | 過去献立移行の並行実行結果 | 同一ユーザー・同一献立への並行integration test |
 | O-09 | keep-aliveの意図したJST開始・終了時刻 | 運用担当に確認してcronとコメントを照合 |
 | O-10 | admin destroy stubと`move_dish`の予定Issue | Issue trackerで確定Issueの有無を確認 |
 | O-11 | 通常編集とquick editの並行更新結果 | 同一active献立へのfull/quick updateを並行実行し、最終状態と競合通知を確認 |
-| O-12 | 320px実端末固有の表示・keyboard・focus挙動 | 承認済み実端末で非破壊シナリオを確認。Chrome 151の320px System testは成功済み |
+| O-12 | 320pxを含む実端末固有の表示・keyboard・focus挙動 | 承認済み実端末で非破壊シナリオを確認。自動System testの320px表示、Tab/Enter、JavaScript無効時遷移は成功済み |
+| O-13 | 過去料理drawer保存を実ブラウザーで最初から最後まで行う一連の操作 | 承認済み環境でdrawerを開き、入力、保存、再表示までを非破壊シナリオで確認。一時System testの限定シナリオは成功済み |
 
 ## 7. 対応優先度の提案
 

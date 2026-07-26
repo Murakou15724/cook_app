@@ -6,7 +6,7 @@
 
 - **主要コード**: 最初に読むべき入口
 - **影響先**: 変更で壊れやすい関連領域
-- **テスト候補**: 既存テストの入口。2026-07-26にはRails test全86件と通常編集のSystem test 4件が成功しているが、変更時は対象差分に合わせて再実行する
+- **テスト候補**: 既存テストの入口。2026-07-26のIssue #7検証ではRails test全88件とSystem test全11件が成功しているが、変更時は対象差分に合わせて再実行する
 
 ## 2. 機能別マップ
 
@@ -17,9 +17,9 @@
 | パスキー登録 | `app/controllers/passkey_registrations_controller.rb:4-43`、`app/models/passkey.rb:1-9` | WebAuthn challenge、credential保存、settings画面 | `test/integration/passkeys_test.rb`、`test/models/passkey_test.rb` |
 | パスキーログイン | `app/controllers/passkey_sessions_controller.rb:4-42` | session、sign_count、last_used_at、通常ログイン画面 | `test/integration/passkeys_test.rb` |
 | member/admin権限 | `app/controllers/application_controller.rb:14-28`、`app/controllers/admin/base_controller.rb:1-5`、`app/models/user.rb:4` | 全認証必須画面、admin namespace | `test/integration/admin_management_test.rb`、`test/integration/authentication_flow_test.rb` |
-| 献立一覧・作成 | `MealPlansController#index`, `#create`, `#prepare_index_state`, `#save_meal_plan!` | PlanDish、DishIngredient、ShoppingItem、PersonTag | `test/integration/meal_plans_test.rb`、`test/models/meal_plan_test.rb`、`test/integration/shopping_items_test.rb` |
-| 献立の通常編集 | `MealPlansController#update`, `#sync_full_update!`, `#validate_full_update_ids!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`、`app/views/meal_plans/edit.html.erb` | active/owner scope、nested ID、未変更ID・timestamp、料理位置、ShoppingItem、PersonTag join、CookingRecord、削除UI | `test/integration/meal_plans_test.rb`、`test/system/meal_plan_edit_test.rb`、`test/integration/shopping_items_test.rb` |
-| 献立のquick edit | `MealPlansController#quick_update`, `#sync_quick_ingredients!`, `#sync_shopping_item_for_quick_ingredient!` | 個別DishIngredient、ShoppingItem同期、Turbo Stream | `test/integration/meal_plans_test.rb`、`test/integration/shopping_items_test.rb` |
+| 献立一覧・作成 | `MealPlansController#index`, `#create`, `#prepare_index_state`, `#save_meal_plan!`、`app/views/meal_plans/_list.html.erb` | PlanDish、DishIngredient、ShoppingItem、PersonTag、各料理anchor、Turbo Frame外への遷移、未登録枠 | `test/integration/meal_plans_test.rb`、`test/system/meal_plan_edit_test.rb`、`test/models/meal_plan_test.rb`、`test/integration/shopping_items_test.rb` |
+| 献立の通常編集 | `MealPlansController#update`, `#sync_full_update!`, `#validate_full_update_ids!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`、`app/views/meal_plans/edit.html.erb` | 一覧からの直接導線、active/owner scope、nested ID、未変更ID・timestamp、料理位置、ShoppingItem、PersonTag join、CookingRecord、削除UI | `test/integration/meal_plans_test.rb`、`test/system/meal_plan_edit_test.rb`、`test/integration/shopping_items_test.rb` |
+| server-side quick update | `MealPlansController#update`, `#quick_update`, `#sync_quick_ingredients!`, `#sync_shopping_item_for_quick_ingredient!` | `quick_update` parameter分岐、個別DishIngredient、ShoppingItem同期、Turbo Stream。献立一覧のquick edit UIは廃止済み | `test/integration/meal_plans_test.rb`、`test/integration/shopping_items_test.rb` |
 | 料理並び替え | `MealPlansController#move_dish` | 現在はstub。PlanDish.positionの実動作なし | 追加テストが必要 |
 | 買い物項目の自動生成・通常編集同期 | `MealPlansController#create_shopping_item_for_full_ingredient!`, `#sync_existing_full_ingredient!`, `#destroy_shopping_items_for_full_ingredient!`、`app/models/shopping_item.rb:1-12` | 食材のadd_to_shopping_list、名称、購入状態、sort_order、manual/source整合 | `test/integration/meal_plans_test.rb`、`test/integration/shopping_items_test.rb` |
 | 手動買い物項目 | `app/controllers/shopping_items_controller.rb:16-17` | manual=true、dish_ingredientなし、並び順、購入状態 | `test/integration/shopping_items_test.rb` |
@@ -61,6 +61,8 @@ flowchart LR
 
 通常編集はフォームのhidden `PlanDish.id` / `DishIngredient.id`を使い、1 transaction内で既存レコードを差分同期する。未変更レコードは保存せず、新規料理は存続する最大`position`の後へ追加する（`MealPlansController#sync_full_update!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`）。
 
+Issue #7により、献立一覧の登録済み料理は、所属献立の`/meal_plans/:id/edit`を`href`に持つanchorになった。`data-turbo-frame="_top"`で一覧のTurbo Frame外へ直接遷移し、quick edit drawerや中間リンクを経由しない（`app/views/meal_plans/_list.html.erb:1,24-48`）。
+
 確認対象:
 
 - ownerかつactiveの献立だけがGET/PATCH可能であること
@@ -69,12 +71,19 @@ flowchart LR
 - ShoppingItemの無変更、名称変更、無効から有効、有効から無効、食材・料理削除の各状態遷移
 - 削除予定料理にCookingRecordがある場合は422で全変更を拒否し、CookingRecordを変更しないこと
 - 料理0件、空欄、過去日、日付・食事区分重複、途中失敗で全体がrollbackされること
-- quick edit drawerから通常編集を`_top`で開けること
-- 削除確認Cancel時のDOM保持、削除後focus、keyboard、日付最小値、320px幅
+- 同一献立の複数料理anchorがすべて同じ編集URLを持ち、1回の選択で`_top`へ遷移すること
+- JavaScript無効時のnative navigation、Tab/Enter操作、未登録枠の非リンク、献立一覧の320px幅
+- 削除確認Cancel時のDOM保持、削除後focus、通常編集画面のkeyboard、日付最小値、320px幅
 
-### 4.2 quick edit
+### 4.2 献立一覧UIとserver-side quick updateの境界
 
-quick editは食材ごとに作成・更新・削除し、`add_to_shopping_list`に応じてShoppingItemを同期する（`MealPlansController#quick_update`, `#sync_quick_ingredients!`）。通常編集とは入力shapeと同期処理が異なるため、両方の経路を別々に検証する。同じ献立への並行full/quick updateの競合結果は未確認である。
+献立一覧からはquick edit drawer、フォーム、template、backdrop、`meal-plan-edit` Stimulus属性を削除し、専用`app/javascript/controllers/meal_plan_edit_controller.js`も削除した。一覧でquick edit用人物タグを生成しなくなったため、`MealPlansController#prepare_index_state`の`@person_tags` queryも削除した。カードリンク用CSSはanchor表示に対応し、drawer専用の`.drawer-dish-fields`、`.drawer-ingredient-list`、`.drawer-ingredient-row` selector群を削除した。
+
+一方、買い物リストと過去料理のdrawerが使用する共通`.drawer-backdrop`、`.edit-drawer`等のCSSと各画面のStimulus controllerは維持されている（`app/assets/stylesheets/application.css:1093-1174`; `app/views/shopping_items/_list.html.erb:23-39`; `app/views/cooking_records/_index_content.html.erb:111-171`）。shoppingのIntegration/System testと過去料理drawerの一時System testが成功している。
+
+server-side quick updateは、食材ごとに作成・更新・削除し、`add_to_shopping_list`に応じてShoppingItemを同期する（`MealPlansController#update`, `#quick_update`, `#sync_quick_ingredients!`）。`quick_update`分岐と回帰テストは維持される。通常編集とは入力shapeと同期処理が異なるため、server-side処理を変更するときは両経路を別々に検証する。同じ献立への並行full/quick updateの競合結果は未確認である。
+
+Issue #7はroute、DB schema、migration、外部サービスを変更していない。
 
 ### 4.3 過去献立移行
 
@@ -96,7 +105,9 @@ development / test はMySQLであり、schemaにはMySQL固有表現のcheck con
 - 0件、複数件、再実行、同時実行
 - DB制約とmodel validationの一致
 - development/testのMySQLとproduction DBの差
-- routes、画面リンク、Stimulus controller
+- routes、画面リンク、Stimulus controller、およびJavaScript無効時のnative navigation
+- UI削除時にserver-side処理まで削除する変更かどうか
+- 共通drawer CSS・Stimulusを使用する買い物リストと過去料理への回帰
 - 既存Minitestと追加すべきテスト
 - 未変更レコードへの不要なwriteと、position・購入metadataの保持
 - production相当データ量での性能、並行更新、実端末差

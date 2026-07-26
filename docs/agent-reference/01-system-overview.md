@@ -60,7 +60,7 @@ flowchart LR
 
 | 境界 | アプリ側の責務 | 確認状況 |
 |---|---|---|
-| ブラウザー | ERB を返し、Turbo/Stimulus で献立 quick edit、買い物更新、WebAuthn を補助する | コード確認済み |
+| ブラウザー | ERB を返す。献立一覧の料理リンクは通常のanchorで献立全体の編集画面へ遷移し、Turbo/Stimulusは買い物更新やWebAuthn等を補助する | コード確認済み。献立一覧の直接遷移はIssue #7のSystem testで実測済み |
 | DB | ユーザー単位のデータ、関連、unique/check/FK 制約を保持する | MySQL 形式の `db/schema.rb` を確認済み |
 | WebAuthn | challenge を session に保持し、登録・ログイン結果を検証する | コードと options のテスト期待を確認。実端末は未確認 |
 | GitHub Actions / Render | 定期的に公開 `/ping` を呼び出す | workflow 確認済み。外部サービスの現在状態は未確認 |
@@ -91,7 +91,7 @@ flowchart LR
 
 - 献立作成時の保存: `MealPlansController#save_meal_plan!`（`app/controllers/meal_plans_controller.rb`）
 - 献立通常編集の差分同期: `MealPlansController#sync_full_update!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`
-- quick edit: `MealPlansController#quick_update`, `#sync_quick_ingredients!`
+- server-side quick update: `MealPlansController#quick_update`, `#sync_quick_ingredients!`。`quick_update` parameterによる分岐は維持されているが、献立一覧にはこの処理を呼ぶquick edit UIはない
 - 過去献立の履歴化: `app/controllers/application_controller.rb:30-56`
 
 ### Model
@@ -105,6 +105,10 @@ flowchart LR
 ### View / JavaScript
 
 ERB がフォームと画面構造を作り、Turbo と Stimulus が局所更新およびブラウザー API 連携を担う。バックエンド API 専用アプリではない。
+
+Issue #7の実装では、献立一覧の登録済み料理を`/meal_plans/:id/edit`へのanchorとし、`data-turbo-frame="_top"`で一覧のTurbo Frame外へtop-level navigationする。リンクはJavaScriptを必要とせず、専用の`meal-plan-edit` Stimulus controller、一覧内quick edit drawer、フォーム、template、backdropは削除された。未登録枠はテキスト表示のままでリンクにしない。
+
+根拠: `app/views/meal_plans/_list.html.erb:1,24-48`; `test/integration/meal_plans_test.rb:54-74,192-211`; `test/system/meal_plan_edit_test.rb:21-70`
 
 ### DB
 

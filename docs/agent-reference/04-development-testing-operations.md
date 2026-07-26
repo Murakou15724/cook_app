@@ -11,7 +11,7 @@
 - **実測結果**: 2026-07-26 までに実行された検証結果
 - **未確認**: 調査環境では実機確認できていない内容
 
-基準: コミット済みのcommit `674c39d5882339af3cfa73cebc410d619aebf7fc`と、branch `meal-plan-edit_0726`上の未コミット実装差分およびdocs差分。未コミット差分を基準commitに含まれる変更として扱わない
+調査基準: コミット済みのcommit `4dc969d7a00d6b0ff7f1f80af670f6097388d888`と、branch `meal-plan-direct-edit_0726`上のIssue #7未コミット差分。文書更新完了時点の未コミット差分はアプリ・テスト6ファイルと本Issueで更新する文書5ファイルであり、いずれも基準commitに含まれる変更として扱わない。旧branch `meal-plan-edit_0726`の差分は現行の未コミット差分ではない。
 
 ## 2. 技術構成
 
@@ -97,27 +97,32 @@ development / test は MySQL、production は `DATABASE_URL` を経由する構�
 
 | 検証 | 結果 | 判定 |
 |---|---|---|
-| `test/integration/meal_plans_test.rb`（seed 8849） | 33 runs、301 assertions、0 failures、0 errors、0 skips | 成功 |
-| Rails test全体（seed 10885） | 86 runs、641 assertions、0 failures、0 errors、0 skips | 成功 |
-| `test/system/meal_plan_edit_test.rb`、Chrome 151（seed 25849） | 4 runs、20 assertions、0 failures、0 errors、0 skips | 成功 |
-| Ruby構文確認 | 構文エラーなし | 成功 |
-| Node構文確認 | `meal_plan_form_controller.js`の構文エラーなし | 成功 |
-| ActionViewによるERB解析 | 変更ERBの解析エラーなし | 成功 |
-| Zeitwerk eager load確認 | 定数ロードエラーなし | 成功 |
-| `bin/rails routes -c MealPlansController` | コマンドが完了し、MealPlansControllerのroute出力を確認 | 成功 |
-| 差分検査 | `git diff --check`でエラーなし | 成功 |
+| `test/integration/meal_plans_test.rb`（seed 29490） | 33 runs、300 assertions、0 failures、0 errors、0 skips | 成功 |
+| `test/system/meal_plan_edit_test.rb`（seed 56906） | 7 runs、34 assertions、0 failures、0 errors、0 skips | 成功 |
+| `test/integration/shopping_items_test.rb`（seed 28223） | 10 runs、299 assertions、0 failures、0 errors、0 skips | 成功 |
+| `test/system/shopping_items_test.rb`（seed 27001） | 4 runs、140 assertions、0 failures、0 errors、0 skips | 成功 |
+| `test/integration/cooking_record_migration_test.rb`（seed 7999） | 9 runs、63 assertions、0 failures、0 errors、0 skips | 成功 |
+| Rails test全体（seed 42423） | 88 runs、860 assertions、0 failures、0 errors、0 skips | 成功 |
+| System test全体（seed 1887） | 11 runs、174 assertions、0 failures、0 errors、0 skips | 成功 |
+| 0件シナリオの一時テスト（seed 11629） | 1 run、3 assertions、0 failures、0 errors、0 skips | 成功 |
+| 過去料理drawerの一時System test（seed 2757） | 1 run、4 assertions、0 failures、0 errors、0 skips | 成功 |
 
-Integration testでは通常編集のID差分同期、所有scope、入力異常、rollback、買い物同期、CookingRecord保護と、作成・quick edit・削除の回帰を確認した。System testではquick edit drawerから通常編集へのtop-level navigation、料理削除確認のCancel/OK、focus移動、keyboard操作、Chrome 151の320px幅を確認した。
+記録された同一seedでの再実行も成功した。
 
-テスト根拠: `test/integration/meal_plans_test.rb`; `test/system/meal_plan_edit_test.rb`
+Integration testでは、献立一覧の各料理が同じ献立編集URLを持つこと、`data-turbo-frame="_top"`、未登録枠が非リンクであること、quick edit drawer・専用Stimulus属性・専用フォームが生成HTMLにないことを確認した。通常編集のID差分同期、所有scope、入力異常、rollback、買い物同期、CookingRecord保護に加え、server-side `quick_update`、作成、削除の回帰も確認した。
 
-routes確認はroute定義を読み込んで出力できることの検証であり、Minitest/System testのrun数・assertion数には含めない。
+System testでは、料理カードを1回選択した直接遷移、TabでfocusしてEnterで開く操作、JavaScript無効時のnative navigationとテスト後のJavaScript設定復元、320px幅の献立一覧で横overflowがなく未登録枠が非リンクであることを確認した。通常編集画面の削除確認Cancel/OK、focus移動、keyboard操作、320px幅も確認した。買い物リストと過去料理について、献立一覧用quick editを削除しても共通drawerが動作することを関連テストで確認した。
+
+テスト根拠: `test/integration/meal_plans_test.rb:54-74,192-211,954-1018`; `test/system/meal_plan_edit_test.rb:21-123`; `test/integration/shopping_items_test.rb`; `test/system/shopping_items_test.rb`; `test/integration/cooking_record_migration_test.rb`
+
+Issue #7では、route、DB schema、migration、外部サービスを変更していない。`MealPlansController#update`の`quick_update`分岐と`#quick_update`処理は維持し、献立一覧UIだけからquick edit drawerを廃止した。
 
 ### 5.2 検証時の環境変更と未確認範囲
 
+- 最初のIntegration test実行はsandboxからMySQL socketへ接続できず失敗した。製品コードの失敗ではなく、test DBに限定した許可済み環境で再実行して成功した。
 - test DBの作成、migration、dropは実行していない。
-- System test用のChromeは検証時に`/tmp`へ一時取得しただけで、リポジトリ構成、依存定義、環境変数は変更していない。
-- production相当DB・データ量での性能、通常編集とquick editの並行更新、実端末固有の表示・操作差は未確認である。
+- 実端末、production/staging、production相当データ量での性能は未確認である。
+- 過去料理drawer保存を実ブラウザーで最初から最後まで行う一連の操作、および通常編集とserver-side quick updateの並行送信結果は未確認である。
 
 推奨する検証順序は次のとおり。
 
