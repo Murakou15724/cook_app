@@ -46,7 +46,7 @@
 | route 群 | 主な画面・処理 | 状態 |
 |---|---|---|
 | `/` | 今日の昼食・夕食を表示 | 実装済み |
-| `/meal_plans` | 今日以降の献立一覧、作成、通常編集、quick edit、削除 | 実装済み |
+| `/meal_plans` | 今日以降の献立一覧、作成、献立全体の通常編集、削除。一覧の各料理から通常編集へ直接遷移する | 実装済み。server-sideの`quick_update`分岐は維持されるが、一覧にquick edit UIはない |
 | `/meal_plans/:id/move_dish` | 料理の並び替え | **stub** |
 | `/shopping_items` | 献立由来と手動の買い物項目を表示・追加・編集・削除 | 実装済み |
 | `/shopping_items/:id/toggle_purchased` | 購入済み状態を切り替える | 実装済み |
@@ -108,9 +108,9 @@
 
 ### 4.3 通常献立編集と quick edit の違い
 
-この2経路は同じ update action に入るが、処理内容が異なる。変更時に統合された処理だと仮定してはならない。
+この2経路は同じ update action に入るが、処理内容が異なる。変更時に統合された処理だと仮定してはならない。Issue #7で廃止したのは献立一覧のquick edit UIであり、server-sideの`quick_update` parameter分岐と更新処理ではない。
 
-| 項目 | 通常編集 | quick edit |
+| 項目 | 通常編集 | server-side quick update |
 |---|---|---|
 | 分岐 | `quick_update` parameter なし | `quick_update` parameter あり |
 | 対象 | ログインユーザー所有かつ未移行の献立 | ログインユーザー所有かつ未移行の献立 |
@@ -146,11 +146,22 @@ dishes["0"] {
 
 通常編集への画面導線と操作仕様:
 
-- quick edit drawer内の「献立全体を編集」は`data-turbo-frame="_top"`で通常編集ページをtop-level navigationとして開く。
+- 献立一覧では、登録済みの各料理カード全体が所属献立の`/meal_plans/:id/edit`を`href`に持つanchorである。同じ献立に複数料理がある場合は、すべて同じ編集URLを使用する。
+- 料理anchorは`data-turbo-frame="_top"`を持ち、一覧を囲む`turbo-frame#meal_plans`の外へtop-level navigationする。quick edit drawerや「献立全体を編集」という中間リンクは表示しない。
+- 通常のanchorであるためJavaScript無効時も遷移でき、TabでfocusしてEnterで開ける。JavaScript無効化、Tab/Enter、320px幅での横overflowなしと遷移はSystem testで実測済みである。
+- 献立未登録の昼食・夕食枠は「未登録」というテキストのままで、anchorにしない。
 - 通常編集では全料理に削除ボタンを表示し、最後の1件も画面上では削除できる。料理0件のまま送信すると422になる。
 - 削除確認をキャンセルした場合はDOMとhidden IDを保持する。削除確定後は次の料理、前の料理、「料理を追加」ボタンの順でfocusを移す。
 - 料理削除はEnter/Spaceでも操作できる。日付inputの最小値は当日である。
-- Chrome 151のsystem testで320px幅における横overflowなしと主要操作を確認した。
+- 320px幅では、献立一覧と通常編集画面の双方について横overflowなしと主要操作をSystem testで確認した。
+
+一覧UIとserver-side処理の境界:
+
+- `app/views/meal_plans/_list.html.erb`からquick edit用フォーム、template、drawer、backdrop、`meal-plan-edit` Stimulus属性を削除した。
+- `app/javascript/controllers/meal_plan_edit_controller.js`を削除し、献立一覧で不要になった`MealPlansController#prepare_index_state`内の人物タグ一覧queryを削除した。
+- quick edit drawer専用のCSS selector群は削除した。一方、買い物リストと過去料理で使用する共通drawerのview、Stimulus controller、CSSは維持した。
+- `MealPlansController#update`の`quick_update`分岐、`#quick_update`、食材・買い物項目の同期処理、およびIntegration testは維持した。
+- route、DB schema、migration、外部サービスへの変更はない。
 
 根拠:
 
@@ -159,9 +170,11 @@ dishes["0"] {
 - 差分同期: `MealPlansController#sync_full_update!`, `#sync_dishes_for_full_update!`, `#sync_ingredients_for_full_update!`, `#sync_existing_full_ingredient!`
 - 履歴保護: `MealPlansController#reject_cooking_record_dish_deletion!`
 - hidden ID・日付・削除操作: `app/views/meal_plans/edit.html.erb`; `MealPlanFormController#removeDish`
-- drawer導線: `app/views/meal_plans/_list.html.erb`
+- 一覧からの直接導線: `app/views/meal_plans/_list.html.erb:1,24-48`
+- 一覧用query: `MealPlansController#prepare_index_state`（`app/controllers/meal_plans_controller.rb:90-94`）
+- 一覧カードCSSと共通drawer CSS: `app/assets/stylesheets/application.css:637-660,1093-1174`
 
-テスト根拠: `test/integration/meal_plans_test.rb`の通常編集、scope、不正shape、不正nested ID、重複ID、rollback、買い物同期、CookingRecord保護、quick edit・作成・削除の各ケース; `test/system/meal_plan_edit_test.rb`のdrawer導線、削除確認・focus・keyboard・320pxの各ケース
+テスト根拠: `test/integration/meal_plans_test.rb:54-74,192-211,954-1018`および同ファイルの通常編集、scope、不正shape、不正nested ID、重複ID、rollback、買い物同期、CookingRecord保護、作成・削除の各ケース; `test/system/meal_plan_edit_test.rb:21-123`の直接遷移、Tab/Enter、JavaScript無効、一覧と通常編集の320px、削除確認・focus・keyboardの各ケース
 
 ### 4.4 過去献立の履歴化
 
@@ -226,17 +239,25 @@ dishes["0"] {
 
 | 対象 | seed | 結果 |
 |---|---:|---|
-| `test/integration/meal_plans_test.rb` | 8849 | 33 runs、301 assertions、0 failures、0 errors、0 skips |
-| Rails test全体 | 10885 | 86 runs、641 assertions、0 failures、0 errors、0 skips |
-| `test/system/meal_plan_edit_test.rb`（Chrome 151） | 25849 | 4 runs、20 assertions、0 failures、0 errors、0 skips |
+| `test/integration/meal_plans_test.rb` | 29490 | 33 runs、300 assertions、0 failures、0 errors、0 skips |
+| `test/system/meal_plan_edit_test.rb` | 56906 | 7 runs、34 assertions、0 failures、0 errors、0 skips |
+| `test/integration/shopping_items_test.rb` | 28223 | 10 runs、299 assertions、0 failures、0 errors、0 skips |
+| `test/system/shopping_items_test.rb` | 27001 | 4 runs、140 assertions、0 failures、0 errors、0 skips |
+| `test/integration/cooking_record_migration_test.rb` | 7999 | 9 runs、63 assertions、0 failures、0 errors、0 skips |
+| Rails test全体 | 42423 | 88 runs、860 assertions、0 failures、0 errors、0 skips |
+| System test全体 | 1887 | 11 runs、174 assertions、0 failures、0 errors、0 skips |
+| 0件シナリオの一時テスト | 11629 | 1 run、3 assertions、0 failures、0 errors、0 skips |
+| 過去料理drawerの一時System test | 2757 | 1 run、4 assertions、0 failures、0 errors、0 skips |
 
-Ruby構文、Node構文、ActionViewによるERB解析、Zeitwerk、差分検査に加え、`bin/rails routes -c MealPlansController`が成功し、MealPlansControllerのroute出力を確認した。test DBの作成・migration・dropは実行していない。詳細は [04-development-testing-operations.md](04-development-testing-operations.md) を参照する。
+記録された同一seedでの再実行も成功した。最初のIntegration test実行はsandboxからMySQL socketへ接続できず失敗したが、test DBに限定した許可済み環境で再実行して成功したため、製品不具合とは判定されていない。test DBの作成・migration・dropは実行していない。詳細は [04-development-testing-operations.md](04-development-testing-operations.md) を参照する。
 
 未確認事項:
 
 - 実ブラウザー・実端末での WebAuthn 登録とログイン
 - production PostgreSQL 上の全ユースケース
 - 通常編集とquick editを同じ献立へ同時実行した場合の競合結果
-- production相当データ量での通常編集性能と実端末固有の表示・操作差
+- production/stagingでのIssue #7の導線
+- production相当データ量での通常編集性能と、320pxを含む実端末固有の表示・操作差
+- 過去料理drawer保存を実ブラウザーで最初から最後まで行う一連の操作
 - stub route の将来仕様
 - 管理者登録を誰がどの運用で実施するか

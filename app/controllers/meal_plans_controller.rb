@@ -91,7 +91,6 @@ class MealPlansController < ApplicationController
     @meal_plans = current_user.meal_plans.active.today_or_future
                               .includes(:person_tags, plan_dishes: :dish_ingredients)
                               .ordered
-    @person_tags = current_user.person_tags.order(:name)
   end
 
   def quick_update
