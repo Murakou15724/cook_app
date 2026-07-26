@@ -1006,6 +1006,10 @@ select:focus {
   background: var(--card);
 }
 
+.shopping-row--unpurchased {
+  grid-template-columns: minmax(0, 1fr) 34px 20px;
+}
+
 .shopping-row:first-child {
   border-top: 0;
 }
